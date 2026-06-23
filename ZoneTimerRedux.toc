@@ -1,0 +1,16 @@
+## Interface: 110207, 120001, 11508, 20505, 40402, 50504
+## Title: ZoneTimer Redux
+## Notes: Tracks time and gold per zone.
+## Version: 1.0
+## Author: Alniarez
+## SavedVariables: ZoneTimerSettings, ZoneGoldDB
+
+Core.lua
+
+Libs/AlnUI.lua
+UI.lua
+
+Settings_Mainline.lua
+# I think I don't need this anymore.
+# [AllowLoadGameType mainline]
+# Settings_Classic.lua  [AllowLoadGameType classic]
