@@ -3,11 +3,19 @@
 ZoneTimerRedux = {}
 ZoneTimerRedux.VERSION  = "1.0"
 ZoneTimerRedux.sortMode = "time"
+ZoneTimerRedux.DEBUG    = false
 
 -- ── Runtime state (not persisted) ────────────────────────────────────────────
 ZoneTimerRedux.currentZone = nil
 ZoneTimerRedux.enteredTime = nil
 ZoneTimerRedux.isPaused    = false
+
+-- ── Debug helper ─────────────────────────────────────────────────────────────
+
+local function DebugPrint(...)
+    if not ZoneTimerRedux.DEBUG then return end
+    print("|cff33ff99ZoneTimerRedux:|r", ...)
+end
 
 -- ── SavedVariable defaults (populated before addon files run) ─────────────────
 ZoneTimerSettings                       = ZoneTimerSettings or {}
@@ -18,8 +26,9 @@ ZoneTimerSettings.opacity               = ZoneTimerSettings.opacity  or 1.0
 ZoneTimerSettings.fontSize              = ZoneTimerSettings.fontSize or 12
 if ZoneTimerSettings.trackGold  == nil then ZoneTimerSettings.trackGold  = true end
 if ZoneTimerSettings.showAlerts == nil then ZoneTimerSettings.showAlerts = true end
-if ZoneTimerSettings.tallySort  == nil then ZoneTimerSettings.tallySort  = "time" end
+if ZoneTimerSettings.tallySort   == nil then ZoneTimerSettings.tallySort   = "time" end
 if ZoneTimerSettings.goldenTheme == nil then ZoneTimerSettings.goldenTheme = true end
+if ZoneTimerSettings.showSubzone == nil then ZoneTimerSettings.showSubzone = true end
 
 ZoneTimerRedux.sortMode = ZoneTimerSettings.tallySort
 
@@ -110,29 +119,51 @@ function ZoneTimerRedux:SaveCurrentZone()
         local elapsed = time() - self.enteredTime
         ZoneTimerSettings.times[self.currentZone] =
             (ZoneTimerSettings.times[self.currentZone] or 0) + elapsed
+        DebugPrint(string.format("Saved %q: +%ds (total %ds)", self.currentZone, elapsed, ZoneTimerSettings.times[self.currentZone]))
     end
 end
 
 function ZoneTimerRedux:EnterZone(zone)
+    if not zone or zone == "" then return end
     self:SaveCurrentZone()
     self.currentZone = zone
     self.enteredTime = self.isPaused and nil or time()
+    DebugPrint(string.format("Entered zone: %q (paused: %s)", tostring(zone), tostring(self.isPaused)))
+
+    local ann = ZoneTimerSettings.announcedMilestones
+    local isNew = not (ZoneTimerSettings.times[zone] and ZoneTimerSettings.times[zone] > 0)
+               and not (ann[zone] and ann[zone]["discovered"])
+    if isNew and ZoneTimerSettings.showAlerts then
+        ann[zone] = ann[zone] or {}
+        ann[zone]["discovered"] = true
+        DebugPrint(string.format("New zone discovered: %q", zone))
+        if ZoneTimerRedux_ShowDiscoveredAlert then
+            ZoneTimerRedux_ShowDiscoveredAlert(zone)
+        end
+    end
 end
 
 function ZoneTimerRedux:Pause()
     self:SaveCurrentZone()
-    self.isPaused   = true
+    self.isPaused    = true
     self.enteredTime = nil
+    DebugPrint("Timer paused.")
 end
 
 function ZoneTimerRedux:Resume()
-    self.isPaused   = false
+    self.isPaused    = false
     self.enteredTime = time()
+    DebugPrint("Timer resumed.")
 end
 
 -- ── Milestones ────────────────────────────────────────────────────────────────
 
-ZoneTimerRedux.MILESTONES = { 73, 600, 1200, 1800, 2400, 3000, 3600, 4200, 4800, 5400, 6000 }
+-- 30m, 1h, 2h, 3h, 5h, then every 10h up to 200h
+do
+    local m = { 30, 60, 120, 180, 300 }
+    for i = 1, 20 do table.insert(m, i * 600) end
+    ZoneTimerRedux.MILESTONES = m
+end
 
 function ZoneTimerRedux:CheckMilestones(zone, totalSeconds)
     if not zone then return end
@@ -142,8 +173,26 @@ function ZoneTimerRedux:CheckMilestones(zone, totalSeconds)
     for _, m in ipairs(self.MILESTONES) do
         if minutes >= m and not ann[zone][m] then
             ann[zone][m] = true
+            DebugPrint(string.format("Milestone %dm reached in %q (alerts: %s)", m, zone, tostring(ZoneTimerSettings.showAlerts)))
             if ZoneTimerSettings.showAlerts then
                 ZoneTimerRedux_ShowMilestoneAlert(zone, m)
+            end
+        end
+    end
+end
+
+function ZoneTimerRedux:CheckGoldMilestones(zone, totalCopper)
+    if not zone then return end
+    local ann = ZoneTimerSettings.announcedMilestones
+    ann[zone] = ann[zone] or {}
+    local goldK = math.floor(totalCopper / 1000000)  -- 1,000g = 1,000,000 copper
+    for k = 1, goldK do
+        local key = "g" .. k
+        if not ann[zone][key] then
+            ann[zone][key] = true
+            DebugPrint(string.format("Gold milestone %dk reached in %q (alerts: %s)", k, zone, tostring(ZoneTimerSettings.showAlerts)))
+            if ZoneTimerSettings.showAlerts then
+                ZoneTimerRedux_ShowGoldMilestoneAlert(zone, k * 1000)
             end
         end
     end
@@ -166,5 +215,7 @@ goldFrame:SetScript("OnEvent", function(_, _, message)
     local s = tonumber(string.match(message, silverPat)) or 0
     local c = tonumber(string.match(message, copperPat)) or 0
 
-    ZoneGoldDB[zone] = (ZoneGoldDB[zone] or 0) + g * 10000 + s * 100 + c
+    local earned = g * 10000 + s * 100 + c
+    ZoneGoldDB[zone] = (ZoneGoldDB[zone] or 0) + earned
+    DebugPrint(string.format("Gold in %q: +%dc (total %dc)", zone, earned, ZoneGoldDB[zone]))
 end)

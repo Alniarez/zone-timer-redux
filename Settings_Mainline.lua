@@ -187,6 +187,32 @@ local function InitializeSettings()
     ))
 
     Settings.RegisterAddOnCategory(category)
+
+    -- ── Debug (only visible when ZoneTimerRedux.DEBUG is true) ────────────────
+
+    if ZTR.DEBUG then
+        addonLayout:AddInitializer(CreateSettingsListSectionHeaderInitializer("Debug"))
+
+        local showSubzoneSetting = Settings.RegisterAddOnSetting(
+            category,
+            "ZTR_SHOW_SUBZONE",
+            "showSubzone",
+            ZoneTimerSettings,
+            Settings.VarType.Boolean,
+            "Show subzone",
+            true
+        )
+        Settings.CreateCheckbox(
+            category,
+            showSubzoneSetting,
+            "Display the current subzone name below the zone name on the timer window."
+        )
+        Settings.SetOnValueChangedCallback("ZTR_SHOW_SUBZONE", function()
+            if ZoneTimerRedux.SetShowSubzone then
+                ZoneTimerRedux.SetShowSubzone(Settings.GetValue("ZTR_SHOW_SUBZONE"))
+            end
+        end)
+    end
 end
 
 InitializeSettings()

@@ -19,6 +19,24 @@ function ZoneTimerRedux_ShowMilestoneAlert(zone, minutes)
     })
 end
 
+function ZoneTimerRedux_ShowGoldMilestoneAlert(zone, gold)
+    AlnUI:ShowToast({
+        icon  = "Interface\\Icons\\inv_misc_coin_01",
+        title = "Gold Milestone!",
+        text  = string.format("%dg earned in %s!", gold, zone),
+        sound = 12891,
+    })
+end
+
+function ZoneTimerRedux_ShowDiscoveredAlert(zone)
+    AlnUI:ShowToast({
+        icon  = "Interface\\Icons\\inv_misc_map_01",
+        title = "Zone Discovered!",
+        text  = string.format("New zone discovered: %s", zone),
+        sound = 12889,
+    })
+end
+
 -- ── Main timer frame ──────────────────────────────────────────────────────────
 
 local mainFrame = AlnUI:CreateDialog({
@@ -38,10 +56,23 @@ zoneText:SetPoint("TOP", mainFrame, "TOP", 0, -12)
 zoneText:SetFont("Fonts\\FRIZQT__.TTF", ZoneTimerSettings.fontSize + 4)
 zoneText:SetText("---")
 
+local subzoneText = mainFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+subzoneText:SetFont("Fonts\\FRIZQT__.TTF", ZoneTimerSettings.fontSize - 1)
+subzoneText:SetTextColor(0.8, 0.8, 0.8)
+subzoneText:SetText("")
+
 local timerText = mainFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-timerText:SetPoint("TOP", zoneText, "BOTTOM", 0, -4)
 timerText:SetFont("Fonts\\FRIZQT__.TTF", ZoneTimerSettings.fontSize)
 timerText:SetText("Time: 0s")
+
+if ZTR.DEBUG and ZoneTimerSettings.showSubzone ~= false then
+    subzoneText:SetPoint("TOP", zoneText, "BOTTOM", 0, -2)
+    timerText:SetPoint("TOP", subzoneText, "BOTTOM", 0, -4)
+    mainFrame:SetHeight(mainFrame:GetHeight() + 16)
+else
+    subzoneText:Hide()
+    timerText:SetPoint("TOP", zoneText, "BOTTOM", 0, -4)
+end
 
 local goldText = mainFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
 goldText:SetPoint("TOP", timerText, "BOTTOM", 0, -4)
@@ -49,11 +80,15 @@ goldText:SetText("Gold: 0g 0s 0c")
 
 if ZoneTimerSettings.trackGold == false then
     goldText:Hide()
-    mainFrame:SetHeight(55)
+    mainFrame:SetHeight(mainFrame:GetHeight() - 20)
 end
 
 mainFrame:SetScript("OnUpdate", function()
     if not ZTR.currentZone then return end
+
+    if ZTR.DEBUG and ZoneTimerSettings.showSubzone ~= false then
+        subzoneText:SetText(GetSubZoneText() or "")
+    end
 
     local total = ZTR:GetCurrentTime()
     timerText:SetText("Time: " .. ZTR:ColorTime(ZTR:FormatTime(total)))
@@ -61,6 +96,7 @@ mainFrame:SetScript("OnUpdate", function()
     if ZoneTimerSettings.trackGold ~= false then
         local copper = ZTR:GetZoneGold(ZTR.currentZone)
         goldText:SetText("Gold: " .. ZTR:ColorGold(ZTR:FormatGold(copper)))
+        ZTR:CheckGoldMilestones(ZTR.currentZone, copper)
     end
 
     ZTR:CheckMilestones(ZTR.currentZone, total)
@@ -179,11 +215,12 @@ tallyGoldText:SetTextColor(1, 0.82, 0)
 local exportFrame = AlnUI:CreateDialog({
     name       = "ZoneTimerReduxExportFrame",
     title      = "Zone Timer – CSV Export",
-    titleWidth = 280,
+    titleWidth = 520,
     width      = 600,
     height     = 400,
     strata     = "DIALOG",
     level      = tallyFrame:GetFrameLevel() + 10,
+    theme      = ZoneTimerSettings.goldenTheme ~= false and "gold" or "standard",
 })
 exportFrame:ClearAllPoints()
 exportFrame:SetPoint("CENTER", tallyFrame, "CENTER")
@@ -224,15 +261,16 @@ local function ApplyTheme()
     }
     mainFrame:SetBackdrop(backdrop)
     tallyFrame:SetBackdrop(backdrop)
-    if tallyFrame.titleBanner then
-        tallyFrame.titleBanner:SetTexture(t.header)
-    end
+    exportFrame:SetBackdrop(backdrop)
+    if tallyFrame.titleBanner  then tallyFrame.titleBanner:SetTexture(t.header)  end
+    if exportFrame.titleBanner then exportFrame.titleBanner:SetTexture(t.header) end
 end
 
 ZoneTimerRedux.ApplyWindowTheme = ApplyTheme
 
 mainFrame:HookScript("OnShow", ApplyTheme)
 tallyFrame:HookScript("OnShow", ApplyTheme)
+exportFrame:HookScript("OnShow", ApplyTheme)
 
 local function ShowTally()
     tallySortBtn:SetText(ZTR.sortMode == "gold" and "Sort: Gold" or "Sort: Time")
@@ -243,6 +281,22 @@ end
 -- ── Public API for settings panels ───────────────────────────────────────────
 
 ZoneTimerRedux.mainFrame = mainFrame
+
+ZoneTimerRedux.SetShowSubzone = function(enabled)
+    ZoneTimerSettings.showSubzone = enabled
+    local baseHeight = ZoneTimerSettings.trackGold ~= false and 75 or 55
+    if enabled then
+        subzoneText:Show()
+        timerText:ClearAllPoints()
+        timerText:SetPoint("TOP", subzoneText, "BOTTOM", 0, -4)
+        mainFrame:SetHeight(baseHeight + 16)
+    else
+        subzoneText:Hide()
+        timerText:ClearAllPoints()
+        timerText:SetPoint("TOP", zoneText, "BOTTOM", 0, -4)
+        mainFrame:SetHeight(baseHeight)
+    end
+end
 
 ZoneTimerRedux.SetFontSize = function(value)
     zoneText:SetFont("Fonts\\FRIZQT__.TTF", value + 4)
@@ -298,6 +352,7 @@ eventFrame:SetScript("OnEvent", function(_, event)
 
     -- PLAYER_ENTERING_WORLD or ZONE_CHANGED_NEW_AREA
     local zone = GetRealZoneText()
+    if not zone or zone == "" then return end
     ZTR:EnterZone(zone)
     zoneText:SetText(ZTR.currentZone or "(loading...)")
 end)
@@ -308,7 +363,7 @@ SLASH_ZONETIMEREDUX1 = "/zt"
 SlashCmdList["ZONETIMEREDUX"] = function(msg)
     msg = string.lower(msg or "")
 
-    if msg == "forcemilestone" then
+    if msg == "forcemilestone" and ZTR.DEBUG then
         if ZTR.currentZone then
             ZoneTimerRedux_ShowMilestoneAlert(ZTR.currentZone, 999)
         end

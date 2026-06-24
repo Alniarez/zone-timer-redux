@@ -7,7 +7,7 @@ A rewrite of the original **ZoneTimer** by kani__. Tracks time spent and gold ea
 - **Zone timer** — compact always-on-screen frame showing the current zone, time spent, and gold earned.
 - **Zone tally** — scrollable list of every visited zone with total time and gold, sortable by either column.
 - **CSV export** — copy all zone data to clipboard from the tally window.
-- **Milestone alerts** — toast notification when you hit a time milestone in a zone.
+- **Milestone alerts** — toast notifications for zone discovery, time milestones (30m → 1h → 2h → 3h → 5h → every 10h), and gold milestones (every 1,000g).
 - **AFK detection** — timer pauses automatically when you go AFK.
 - **Gold tracking** — parses money loot messages to accumulate gold earned per zone.
 - **Golden / standard theme** — toggle between gold and standard border on all windows.
@@ -51,3 +51,4 @@ Open via **Escape → Options → AddOns → Zone Timer Redux**.
 ## TODO
 
 - [ ] Per-character tracking — store and display time/gold per character instead of account-wide.
+- [ ] Subzone tracking — record and display time spent per subzone within a zone.

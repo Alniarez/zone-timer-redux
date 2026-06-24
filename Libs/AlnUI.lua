@@ -315,60 +315,63 @@ function AlnUI:ShowToast(opts)
     local f = CreateFrame("Frame", nil, UIParent, "BackdropTemplate")
     f:SetSize(opts.width or 400, opts.height or 100)
     f:SetPoint("TOP", UIParent, "TOP", 0, -200)
+    f:SetFrameStrata("HIGH")
     f:SetBackdrop({
-        bgFile   = "Interface\\Tooltips\\UI-Tooltip-Background",
+        bgFile   = "Interface\\DialogFrame\\UI-DialogBox-Background",
         edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Gold-Border",
-        tile = true, tileSize = 16, edgeSize = 16,
-        insets = { left = 4, right = 4, top = 4, bottom = 4 },
+        edgeSize = 32,
+        insets   = { left = 8, right = 8, top = 8, bottom = 8 },
     })
-    f:SetBackdropColor(0, 0, 0, 0.85)
     f:SetAlpha(0)
     f:Show()
 
+    -- When an icon is present (left=10, size=64), shift text to center in the
+    -- space to its right so the text never overlaps the icon.
+    local textXOffset = 0
     if opts.icon then
         local icon = f:CreateTexture(nil, "ARTWORK")
         icon:SetSize(64, 64)
-        icon:SetPoint("LEFT", 10, 0)
+        icon:SetPoint("LEFT", 16, 0)
         icon:SetTexture(opts.icon)
         icon:SetTexCoord(0.07, 0.93, 0.07, 0.93)
+        textXOffset = 40  -- (iconX=16 + iconSize=64) / 2
     end
 
     if opts.title then
         local title = f:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-        title:SetPoint("CENTER", f, "CENTER", 0, 25)
+        title:SetPoint("CENTER", f, "CENTER", textXOffset, 12)
         title:SetJustifyH("CENTER")
         title:SetText(opts.title)
     end
 
     if opts.text then
-        local msg = f:CreateFontString(nil, "OVERLAY", "GameFontHighlightLarge")
-        msg:SetPoint("CENTER", f, "CENTER", 0, 0)
+        local msg = f:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+        msg:SetPoint("CENTER", f, "CENTER", textXOffset, -10)
         msg:SetJustifyH("CENTER")
         msg:SetText(opts.text)
     end
 
     local duration = opts.duration or 5
 
-    C_Timer.After(0, function()
-        f.fadeIn = f:CreateAnimationGroup()
-        local fi = f.fadeIn:CreateAnimation("Alpha")
-        fi:SetFromAlpha(0)
-        fi:SetToAlpha(1)
-        fi:SetDuration(opts.fadeIn or 0.3)
-        f.fadeIn:SetToFinalAlpha(true)
-        if opts.sound then PlaySound(opts.sound, "Master") end
-        f.fadeIn:Play()
-    end)
+    -- Fade in directly — no deferred C_Timer needed for the initial animation.
+    local fadeInGroup = f:CreateAnimationGroup()
+    local fi = fadeInGroup:CreateAnimation("Alpha")
+    fi:SetFromAlpha(0)
+    fi:SetToAlpha(1)
+    fi:SetDuration(opts.fadeIn or 0.3)
+    fadeInGroup:SetToFinalAlpha(true)
+    if opts.sound then PlaySound(opts.sound, "Master") end
+    fadeInGroup:Play()
 
     C_Timer.After(duration, function()
-        f.fadeOut = f:CreateAnimationGroup()
-        local fo = f.fadeOut:CreateAnimation("Alpha")
+        local fadeOutGroup = f:CreateAnimationGroup()
+        local fo = fadeOutGroup:CreateAnimation("Alpha")
         fo:SetFromAlpha(1)
         fo:SetToAlpha(0)
         fo:SetDuration(opts.fadeOut or 1)
-        f.fadeOut:SetToFinalAlpha(true)
-        f.fadeOut:SetScript("OnFinished", function() f:Hide() end)
-        f.fadeOut:Play()
+        fadeOutGroup:SetToFinalAlpha(true)
+        fadeOutGroup:SetScript("OnFinished", function() f:Hide() end)
+        fadeOutGroup:Play()
     end)
 
     return f
