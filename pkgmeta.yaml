@@ -1,0 +1,7 @@
+package-as: ZoneTimerRedux
+
+ignore:
+  - README.md
+  - LICENSE
+  - .gitignore
+  - .github
