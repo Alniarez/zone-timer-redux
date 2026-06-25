@@ -1,54 +1,43 @@
 # ZoneTimer Redux
 
-A rewrite of the original **ZoneTimer** by kani__. Tracks time spent and gold earned per zone, displayed on a compact HUD with a full sortable tally window.
+ZoneTimer Redux is a rewrite of the original [ZoneTimer](https://www.curseforge.com/wow/addons/zonetimer) by kani__. It tracks the amount of time you spend in each zone and the gold you earn there.
 
-## Features
+Updated to work on most versions of World of Warcraft.
 
-- **Zone timer** — compact always-on-screen frame showing the current zone, time spent, and gold earned.
-- **Zone tally** — scrollable list of every visited zone with total time and gold, sortable by either column.
-- **CSV export** — copy all zone data to clipboard from the tally window.
-- **Milestone alerts** — toast notifications for zone discovery, time milestones (30m → 1h → 2h → 3h → 5h → every 10h), and gold milestones (every 1,000g).
-- **AFK detection** — timer pauses automatically when you go AFK.
-- **Gold tracking** — parses money loot messages to accumulate gold earned per zone.
-- **Golden / standard theme** — toggle between gold and standard border on all windows.
+# Features
 
-## Slash Commands
+* Tracks time spent in each zone
+* Tracks gold earned in each zone
+* Zone tally with time and gold totals
+* CSV export of tracked data
+* Milestone notifications
+* Automatically pauses while AFK
+* Optional golden UI theme
 
-| Command | Description |
-|---------|-------------|
-| `/zt` | Toggle the main timer window |
-| `/zt tally` | Open the zone tally window |
-| `/zt pause` | Pause the timer |
-| `/zt resume` | Resume the timer |
-| `/zt help` | Show command list |
-| `/ztt` | Toggle the zone tally window directly |
+# Commands
 
-## Settings
+* `/zt` - Toggle the timer window
+* `/zt tally` - Open the zone tally
+* `/ztt` - Same as */zt tally*.
+* `/zt pause` - Pause the timer
+* `/zt resume` - Resume the timer
+* `/zt help` - Show available commands
 
-Open via **Escape → Options → AddOns → Zone Timer Redux**.
 
-- **Golden theme** — gold or standard border on the timer and tally windows.
-- **Window width** — resize the main timer frame (100 – 400 px).
-- **Window opacity** — transparency of the main timer frame (0.1 – 1.0).
-- **Font size** — text size inside the main timer frame (8 – 24).
-- **Visual milestone alerts** — enable or disable toast notifications.
-- **Track gold** — show or hide the gold line on the timer.
-- **Sort tally by gold** — set the default sort order for the tally window.
-- **Reset current zone** — clear the timer for the zone you are in right now.
-- **Reset all zones** — wipe all saved zone times and milestone data.
+# Compatibility
+```
++--------------------------------+-----------+
+| Client                         | Interface |
++--------------------------------+-----------+
+| Retail (The War Within)        |    110207 |
+| Retail PTR / next              |    120001 |
+| Classic Era                    |     11508 |
+| Classic Anniversary Edition    |     20505 |
+| Cataclysm Classic              |     40402 |
+| Mists of Pandaria Classic      |     50504 |
++--------------------------------+-----------+
+```
+# Planned Features
 
-## Compatibility
-
-| Client | Interface |
-|--------|-----------|
-| Retail (The War Within) | 110207 |
-| Retail PTR / next | 120001 |
-| Classic Era | 11508 |
-| Classic Anniversary Edition | 20505 |
-| Cataclysm Classic | 40402 |
-| Mists of Pandaria Classic | 50504 |
-
-## TODO
-
-- [ ] Per-character tracking — store and display time/gold per character instead of account-wide.
-- [ ] Subzone tracking — record and display time spent per subzone within a zone.
+* Per-character tracking
+* Subzone tracking
