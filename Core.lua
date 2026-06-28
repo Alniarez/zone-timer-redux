@@ -3,7 +3,7 @@
 ZoneTimerRedux = {}
 ZoneTimerRedux.VERSION  = "1.0"
 ZoneTimerRedux.sortMode = "time"
-ZoneTimerRedux.DEBUG    = false
+ZoneTimerRedux.DEBUG    = true
 
 -- ── Runtime state (not persisted) ────────────────────────────────────────────
 ZoneTimerRedux.currentZone = nil
@@ -17,22 +17,62 @@ local function DebugPrint(...)
     print("|cff33ff99ZoneTimerRedux:|r", ...)
 end
 
--- ── SavedVariable defaults (populated before addon files run) ─────────────────
-ZoneTimerSettings                       = ZoneTimerSettings or {}
-ZoneTimerSettings.times                 = ZoneTimerSettings.times or {}
-ZoneTimerSettings.announcedMilestones   = ZoneTimerSettings.announcedMilestones or {}
-ZoneTimerSettings.width                 = ZoneTimerSettings.width    or 220
-ZoneTimerSettings.opacity               = ZoneTimerSettings.opacity  or 1.0
-ZoneTimerSettings.fontSize              = ZoneTimerSettings.fontSize or 12
-if ZoneTimerSettings.trackGold  == nil then ZoneTimerSettings.trackGold  = true end
-if ZoneTimerSettings.showAlerts == nil then ZoneTimerSettings.showAlerts = true end
-if ZoneTimerSettings.tallySort   == nil then ZoneTimerSettings.tallySort   = "time" end
-if ZoneTimerSettings.goldenTheme == nil then ZoneTimerSettings.goldenTheme = true end
-if ZoneTimerSettings.showSubzone == nil then ZoneTimerSettings.showSubzone = true end
+-- ── SavedVariable placeholder (file-load-time only) ──────────────────────────
+-- SavedVariables are NOT loaded yet when addon files execute; WoW makes them
+-- available only after ADDON_LOADED fires.  This placeholder lets UI.lua create
+-- its frames without crashing.  The authoritative initialization happens in the
+-- ADDON_LOADED handler below, once the real saved data is accessible.
+ZoneTimerSettings                      = ZoneTimerSettings or {}
+ZoneTimerSettings.times                = ZoneTimerSettings.times or {}
+ZoneTimerSettings.announcedMilestones  = ZoneTimerSettings.announcedMilestones or {}
+ZoneTimerSettings.width                = ZoneTimerSettings.width   or 220
+ZoneTimerSettings.opacity              = ZoneTimerSettings.opacity or 1.0
+ZoneTimerSettings.fontSize             = ZoneTimerSettings.fontSize or 12
+if ZoneTimerSettings.trackGold         == nil then ZoneTimerSettings.trackGold         = true  end
+if ZoneTimerSettings.showAlerts        == nil then ZoneTimerSettings.showAlerts        = true  end
+if ZoneTimerSettings.tallySort         == nil then ZoneTimerSettings.tallySort         = "time" end
+if ZoneTimerSettings.goldenTheme       == nil then ZoneTimerSettings.goldenTheme       = true  end
+if ZoneTimerSettings.showLabels        == nil then ZoneTimerSettings.showLabels        = true  end
+if ZoneTimerSettings.globalDataAdopted == nil then ZoneTimerSettings.globalDataAdopted = false end
+if ZoneTimerSettings.windowVisible     == nil then ZoneTimerSettings.windowVisible     = true  end
 
-ZoneTimerRedux.sortMode = ZoneTimerSettings.tallySort
+ZoneTimerRedux.charView = true  -- tally shows per-character data by default
 
-ZoneGoldDB = ZoneGoldDB or {}
+ZoneGoldDB            = ZoneGoldDB or {}
+ZoneTimerCharDB       = ZoneTimerCharDB or {}
+ZoneTimerCharDB.times = ZoneTimerCharDB.times or {}
+ZoneTimerCharDB.gold  = ZoneTimerCharDB.gold  or {}
+
+-- ── ADDON_LOADED: authoritative init on the real SavedVariables ───────────────
+-- After this event ZoneTimerSettings is the real saved table (WoW replaced the
+-- placeholder above with data loaded from disk).  Re-applying defaults here
+-- fills in any keys added in newer addon versions for users with older save files.
+local _coreInitFrame = CreateFrame("Frame")
+_coreInitFrame:RegisterEvent("ADDON_LOADED")
+_coreInitFrame:SetScript("OnEvent", function(self, event, addonName)
+    if addonName ~= "ZoneTimerRedux" then return end
+    self:UnregisterAllEvents()
+
+    ZoneTimerSettings.times                = ZoneTimerSettings.times or {}
+    ZoneTimerSettings.announcedMilestones  = ZoneTimerSettings.announcedMilestones or {}
+    ZoneTimerSettings.width                = ZoneTimerSettings.width   or 220
+    ZoneTimerSettings.opacity              = ZoneTimerSettings.opacity or 1.0
+    ZoneTimerSettings.fontSize             = ZoneTimerSettings.fontSize or 12
+    if ZoneTimerSettings.trackGold         == nil then ZoneTimerSettings.trackGold         = true  end
+    if ZoneTimerSettings.showAlerts        == nil then ZoneTimerSettings.showAlerts        = true  end
+    if ZoneTimerSettings.tallySort         == nil then ZoneTimerSettings.tallySort         = "time" end
+    if ZoneTimerSettings.goldenTheme       == nil then ZoneTimerSettings.goldenTheme       = true  end
+    if ZoneTimerSettings.showLabels        == nil then ZoneTimerSettings.showLabels        = true  end
+    if ZoneTimerSettings.globalDataAdopted == nil then ZoneTimerSettings.globalDataAdopted = false end
+    if ZoneTimerSettings.windowVisible     == nil then ZoneTimerSettings.windowVisible     = true  end
+
+    ZoneTimerRedux.sortMode = ZoneTimerSettings.tallySort
+
+    ZoneGoldDB            = ZoneGoldDB or {}
+    ZoneTimerCharDB       = ZoneTimerCharDB or {}
+    ZoneTimerCharDB.times = ZoneTimerCharDB.times or {}
+    ZoneTimerCharDB.gold  = ZoneTimerCharDB.gold  or {}
+end)
 
 -- ── Formatting ────────────────────────────────────────────────────────────────
 
@@ -74,6 +114,14 @@ end
 
 -- ── Data accessors ────────────────────────────────────────────────────────────
 
+function ZoneTimerRedux:GetActiveTimes()
+    return self.charView and ZoneTimerCharDB.times or ZoneTimerSettings.times
+end
+
+function ZoneTimerRedux:GetActiveGoldDB()
+    return self.charView and ZoneTimerCharDB.gold or ZoneGoldDB
+end
+
 function ZoneTimerRedux:GetZoneGold(zone)
     return ZoneGoldDB[zone] or 0
 end
@@ -86,9 +134,11 @@ function ZoneTimerRedux:GetCurrentTime()
 end
 
 function ZoneTimerRedux:GetSortedZones()
-    local list = {}
-    for zone, t in pairs(ZoneTimerSettings.times) do
-        table.insert(list, { zone = zone, time = t, gold = self:GetZoneGold(zone) })
+    local times  = self:GetActiveTimes()
+    local goldDB = self:GetActiveGoldDB()
+    local list   = {}
+    for zone, t in pairs(times) do
+        table.insert(list, { zone = zone, time = t, gold = goldDB[zone] or 0 })
     end
     table.sort(list, function(a, b)
         if self.sortMode == "gold" then return a.gold > b.gold end
@@ -97,11 +147,14 @@ function ZoneTimerRedux:GetSortedZones()
     return list
 end
 
+
 function ZoneTimerRedux:GenerateCSV()
-    local lines = { "Zone,TimeSeconds,TimeFormatted,GoldCopper,GoldFormatted" }
+    local view  = self.charView and "character" or "account"
+    local lines = { "View,Zone,TimeSeconds,TimeFormatted,GoldCopper,GoldFormatted" }
     for _, entry in ipairs(self:GetSortedZones()) do
         table.insert(lines, string.format(
-            "%q,%s,%q,%s,%q",
+            "%s,%q,%s,%q,%s,%q",
+            view,
             entry.zone,
             tostring(math.floor(entry.time)),
             self:FormatTime(entry.time),
@@ -119,7 +172,12 @@ function ZoneTimerRedux:SaveCurrentZone()
         local elapsed = time() - self.enteredTime
         ZoneTimerSettings.times[self.currentZone] =
             (ZoneTimerSettings.times[self.currentZone] or 0) + elapsed
-        DebugPrint(string.format("Saved %q: +%ds (total %ds)", self.currentZone, elapsed, ZoneTimerSettings.times[self.currentZone]))
+        ZoneTimerCharDB.times[self.currentZone] =
+            (ZoneTimerCharDB.times[self.currentZone] or 0) + elapsed
+        DebugPrint(string.format("Saved %q: +%ds (total %ds, char %ds)",
+            self.currentZone, elapsed,
+            ZoneTimerSettings.times[self.currentZone],
+            ZoneTimerCharDB.times[self.currentZone]))
     end
 end
 
@@ -198,6 +256,18 @@ function ZoneTimerRedux:CheckGoldMilestones(zone, totalCopper)
     end
 end
 
+function ZoneTimerRedux:AdoptGlobalData()
+    if ZoneTimerSettings.globalDataAdopted then return end
+    for zone, globalTime in pairs(ZoneTimerSettings.times) do
+        ZoneTimerCharDB.times[zone] = globalTime
+    end
+    for zone, globalGold in pairs(ZoneGoldDB) do
+        ZoneTimerCharDB.gold[zone] = globalGold
+    end
+    ZoneTimerSettings.globalDataAdopted = true
+    DebugPrint("Global data adopted.")
+end
+
 -- ── Gold tracking ─────────────────────────────────────────────────────────────
 
 local goldFrame = CreateFrame("Frame")
@@ -216,6 +286,8 @@ goldFrame:SetScript("OnEvent", function(_, _, message)
     local c = tonumber(string.match(message, copperPat)) or 0
 
     local earned = g * 10000 + s * 100 + c
-    ZoneGoldDB[zone] = (ZoneGoldDB[zone] or 0) + earned
-    DebugPrint(string.format("Gold in %q: +%dc (total %dc)", zone, earned, ZoneGoldDB[zone]))
+    ZoneGoldDB[zone]          = (ZoneGoldDB[zone] or 0) + earned
+    ZoneTimerCharDB.gold[zone] = (ZoneTimerCharDB.gold[zone] or 0) + earned
+    DebugPrint(string.format("Gold in %q: +%dc (total %dc, char %dc)",
+        zone, earned, ZoneGoldDB[zone], ZoneTimerCharDB.gold[zone]))
 end)
