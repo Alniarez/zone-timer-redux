@@ -61,10 +61,7 @@ function AlnUI:CreateDialog(opts)
     if opts.level  then frame:SetFrameLevel(opts.level) end
 
     frame:SetMovable(true)
-    frame:EnableMouse(true)
-    frame:RegisterForDrag("LeftButton")
-    frame:SetScript("OnDragStart", frame.StartMoving)
-    frame:SetScript("OnDragStop",  frame.StopMovingOrSizing)
+    frame:SetClampedToScreen(true)
     frame:Hide()
 
     if opts.title then
@@ -80,12 +77,19 @@ function AlnUI:CreateDialog(opts)
         frame.titleText = t
 
         local dragHandle = CreateFrame("Frame", nil, frame)
-        dragHandle:SetSize(opts.titleWidth or 256, 12)
+        dragHandle:SetSize(opts.titleWidth or 256, 64)
         dragHandle:SetPoint("TOP", frame, "TOP", 0, 12)
         dragHandle:EnableMouse(true)
         dragHandle:RegisterForDrag("LeftButton")
         dragHandle:SetScript("OnDragStart", function() frame:StartMoving() end)
         dragHandle:SetScript("OnDragStop",  function() frame:StopMovingOrSizing() end)
+        frame.dragHandle = dragHandle
+    else
+        -- no title banner — drag from the whole frame
+        frame:EnableMouse(true)
+        frame:RegisterForDrag("LeftButton")
+        frame:SetScript("OnDragStart", frame.StartMoving)
+        frame:SetScript("OnDragStop",  frame.StopMovingOrSizing)
     end
 
     if not opts.noCloseButton then
@@ -325,8 +329,8 @@ function AlnUI:ShowToast(opts)
     f:SetAlpha(0)
     f:Show()
 
-    -- When an icon is present (left=10, size=64), shift text to center in the
-    -- space to its right so the text never overlaps the icon.
+    -- When an icon is present, shift text right so it sits beside the icon.
+    -- Pass opts.icon = nil to keep text fully centered with no icon.
     local textXOffset = 0
     if opts.icon then
         local icon = f:CreateTexture(nil, "ARTWORK")
@@ -334,7 +338,7 @@ function AlnUI:ShowToast(opts)
         icon:SetPoint("LEFT", 16, 0)
         icon:SetTexture(opts.icon)
         icon:SetTexCoord(0.07, 0.93, 0.07, 0.93)
-        textXOffset = 40  -- (iconX=16 + iconSize=64) / 2
+        textXOffset = 40
     end
 
     if opts.title then

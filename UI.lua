@@ -3,7 +3,6 @@
 local ZTR = ZoneTimerRedux
 
 -- ── Milestone alert ───────────────────────────────────────────────────────────
--- Global so Core.lua can call it from CheckMilestones.
 
 function ZoneTimerRedux_ShowMilestoneAlert(zone, minutes)
     local hrs    = math.floor(minutes / 60)
@@ -12,7 +11,7 @@ function ZoneTimerRedux_ShowMilestoneAlert(zone, minutes)
     if remMin > 0 then timeText = timeText .. string.format(" %dm", remMin) end
 
     AlnUI:ShowToast({
-        icon  = "Interface\\Icons\\achievement_zone_burningsteppes",
+        icon  = "Interface\\Icons\\inv_misc_pocketwatch_01",
         title = "Milestone Reached!",
         text  = string.format("You spent %s in %s!", timeText, zone),
         sound = 12891,
@@ -40,13 +39,11 @@ end
 -- ── Main timer frame ──────────────────────────────────────────────────────────
 
 local function CalcFrameHeight()
-    local h = 39 + 3 * ZoneTimerSettings.fontSize
-    if ZoneTimerSettings.trackGold == false then
-        h = h - (ZoneTimerSettings.fontSize + 8)
-    end
-    if ZTR.DEBUG and ZoneTimerSettings.showSubzone ~= false then
-        h = h + 16
-    end
+    local fs = ZoneTimerSettings.fontSize
+    -- WoW font line height is roughly fs*1.2, so zone text (fs+4 font) renders ~fs+8 px tall.
+    -- top(14) + zone(fs+8) + gap(6) + sep(1) + gap(6) + timer(fs+3) + gap(5) + gold(fs+3) + bottom(12)
+    local h = 58 + 3 * fs
+    if ZoneTimerSettings.trackGold == false then h = h - (fs + 8) end
     return h
 end
 
@@ -60,51 +57,115 @@ local mainFrame = AlnUI:CreateDialog({
 mainFrame:ClearAllPoints()
 mainFrame:SetPoint("CENTER", 0, -40)
 mainFrame:SetAlpha(ZoneTimerSettings.opacity)
-mainFrame:Show()
+if ZoneTimerSettings.windowVisible ~= false then mainFrame:Show() end
 
 local zoneText = mainFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-zoneText:SetPoint("TOP", mainFrame, "TOP", 0, -12)
-zoneText:SetFont("Fonts\\FRIZQT__.TTF", ZoneTimerSettings.fontSize + 4)
+zoneText:SetTextColor(1, 0.85, 0)
 zoneText:SetText("---")
 
-local subzoneText = mainFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-subzoneText:SetFont("Fonts\\FRIZQT__.TTF", ZoneTimerSettings.fontSize - 1)
-subzoneText:SetTextColor(0.8, 0.8, 0.8)
-subzoneText:SetText("")
+local separator = mainFrame:CreateTexture(nil, "ARTWORK")
+separator:SetHeight(1)
+separator:SetColorTexture(0.55, 0.45, 0.05, 0.6)
+
+local timerLabel = mainFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+timerLabel:SetTextColor(0.5, 0.5, 0.5)
+timerLabel:SetText("Time")
+timerLabel:SetJustifyH("LEFT")
+timerLabel:SetWordWrap(false)
 
 local timerText = mainFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-timerText:SetFont("Fonts\\FRIZQT__.TTF", ZoneTimerSettings.fontSize)
-timerText:SetText("Time: 0s")
+timerText:SetJustifyH("RIGHT")
+timerText:SetWordWrap(false)
+timerText:SetText("---")
 
-if ZTR.DEBUG and ZoneTimerSettings.showSubzone ~= false then
-    subzoneText:SetPoint("TOP", zoneText, "BOTTOM", 0, -2)
-    timerText:SetPoint("TOP", subzoneText, "BOTTOM", 0, -4)
-else
-    subzoneText:Hide()
-    timerText:SetPoint("TOP", zoneText, "BOTTOM", 0, -4)
-end
+local goldLabel = mainFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+goldLabel:SetTextColor(1, 0.82, 0)
+goldLabel:SetText("Gold")
+goldLabel:SetJustifyH("LEFT")
+goldLabel:SetWordWrap(false)
 
 local goldText = mainFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-goldText:SetPoint("TOP", timerText, "BOTTOM", 0, -4)
-goldText:SetText("Gold: 0g 0s 0c")
+goldText:SetJustifyH("RIGHT")
+goldText:SetWordWrap(false)
+goldText:SetText("---")
 
-if ZoneTimerSettings.trackGold == false then
-    goldText:Hide()
+local function LayoutMainFrame()
+    local fs         = ZoneTimerSettings.fontSize
+    local trackGold  = ZoneTimerSettings.trackGold ~= false
+    local showLabels = ZoneTimerSettings.showLabels ~= false
+    local w          = ZoneTimerSettings.width
+
+    zoneText:SetFont("Fonts\\FRIZQT__.TTF", fs + 4)
+    timerLabel:SetFont("Fonts\\FRIZQT__.TTF", fs - 1)
+    timerText:SetFont("Fonts\\FRIZQT__.TTF", fs)
+    goldLabel:SetFont("Fonts\\FRIZQT__.TTF", fs - 1)
+    goldText:SetFont("Fonts\\FRIZQT__.TTF", fs)
+
+    -- Y offsets from frame TOP (negative = downward).
+    -- WoW font line height ≈ font_size * 1.2, so zone text (fs+4 font) takes ~fs+8 px.
+    local zoneH  = fs + 8
+    local yZone  = -14
+    local ySep   = -(14 + zoneH + 6)
+    local yTimer = ySep - 1 - 6
+    local yGold  = yTimer - (fs + 8)
+
+    zoneText:ClearAllPoints()
+    zoneText:SetPoint("TOP", mainFrame, "TOP", 0, yZone)
+    zoneText:SetWidth(w - 24)
+
+    separator:ClearAllPoints()
+    separator:SetPoint("TOPLEFT",  mainFrame, "TOPLEFT",  16, ySep)
+    separator:SetPoint("TOPRIGHT", mainFrame, "TOPRIGHT", -16, ySep)
+
+    timerLabel:ClearAllPoints()
+    timerText:ClearAllPoints()
+    timerText:SetWidth(0)
+    if showLabels then
+        timerLabel:Show()
+        timerText:SetJustifyH("RIGHT")
+        timerLabel:SetPoint("TOPLEFT", mainFrame, "TOPLEFT", 16, yTimer)
+        timerText:SetPoint("TOPRIGHT", mainFrame, "TOPRIGHT", -16, yTimer)
+    else
+        timerLabel:Hide()
+        timerText:SetJustifyH("CENTER")
+        timerText:SetPoint("TOP", mainFrame, "TOP", 0, yTimer)
+    end
+
+    goldLabel:ClearAllPoints()
+    goldText:ClearAllPoints()
+    goldText:SetWidth(0)
+    if trackGold then
+        goldText:Show()
+        if showLabels then
+            goldLabel:Show()
+            goldLabel:SetPoint("TOPLEFT", mainFrame, "TOPLEFT", 16, yGold)
+            goldText:SetJustifyH("RIGHT")
+            goldText:SetPoint("TOPRIGHT", mainFrame, "TOPRIGHT", -16, yGold)
+        else
+            goldLabel:Hide()
+            goldText:SetJustifyH("CENTER")
+            goldText:SetPoint("TOP", mainFrame, "TOP", 0, yGold)
+        end
+    else
+        goldLabel:Hide()
+        goldText:Hide()
+    end
+
+    mainFrame:SetWidth(w)
+    mainFrame:SetHeight(CalcFrameHeight())
 end
+
+LayoutMainFrame()
 
 mainFrame:SetScript("OnUpdate", function()
     if not ZTR.currentZone then return end
 
-    if ZTR.DEBUG and ZoneTimerSettings.showSubzone ~= false then
-        subzoneText:SetText(GetSubZoneText() or "")
-    end
-
     local total = ZTR:GetCurrentTime()
-    timerText:SetText("Time: " .. ZTR:ColorTime(ZTR:FormatTime(total)))
+    timerText:SetText(ZTR:ColorTime(ZTR:FormatTime(total)))
 
     if ZoneTimerSettings.trackGold ~= false then
         local copper = ZTR:GetZoneGold(ZTR.currentZone)
-        goldText:SetText("Gold: " .. ZTR:ColorGold(ZTR:FormatGold(copper)))
+        goldText:SetText(ZTR:ColorGold(ZTR:FormatGold(copper)))
         ZTR:CheckGoldMilestones(ZTR.currentZone, copper)
     end
 
@@ -116,18 +177,19 @@ end)
 local tallyRows     = {}
 local tallyTimeText
 local tallyGoldText
-local UpdateTally   -- forward declaration
+local UpdateTally
 
 local tallyFrame = AlnUI:CreateDialog({
     name       = "ZoneTimerReduxTallyFrame",
     title      = "Zone Timer Tally",
-    titleWidth = 300,
+    titleWidth = 360,
     width      = 520,
     height     = 520,
     theme      = ZoneTimerSettings.goldenTheme ~= false and "gold" or "standard",
 })
 
-AlnUI:CreateColumnRow(tallyFrame, { font = "GameFontNormal", x = 24, y = -44 }, {
+AlnUI:CreateColumnRow(tallyFrame, { font = "GameFontNormal", x = 24, y = -44 },
+{
     { text = "Zone", width = 210, justify = "LEFT" },
     { text = "Time", width = 120, justify = "RIGHT" },
     { text = "Gold", width = 130, justify = "RIGHT", gap = 6 },
@@ -139,16 +201,22 @@ local _, tallyContent = AlnUI:CreateScrollFrame(tallyFrame, {
     contentWidth = 360, contentHeight = 400,
 })
 
-local tallyExportBtn = AlnUI:CreateButton(tallyFrame, { width = 100, height = 22, text = "Export" })
-tallyExportBtn:SetPoint("BOTTOMRIGHT", -16, 16)
-
 local tallySortBtn = AlnUI:CreateButton(tallyFrame, { width = 120, height = 22, text = "Sort: Time" })
-tallySortBtn:SetPoint("BOTTOMRIGHT", tallyExportBtn, "BOTTOMLEFT", -6, 0)
+tallySortBtn:SetPoint("BOTTOMRIGHT", -16, 16)
+
+local tallyViewBtn = AlnUI:CreateButton(tallyFrame, { width = 110, height = 22, text = "View: Char" })
+tallyViewBtn:SetPoint("BOTTOMRIGHT", tallySortBtn, "BOTTOMLEFT", -6, 0)
 
 tallySortBtn:SetScript("OnClick", function()
     ZTR.sortMode = ZTR.sortMode == "time" and "gold" or "time"
     ZoneTimerSettings.tallySort = ZTR.sortMode
     tallySortBtn:SetText(ZTR.sortMode == "gold" and "Sort: Gold" or "Sort: Time")
+    UpdateTally()
+end)
+
+tallyViewBtn:SetScript("OnClick", function()
+    ZTR.charView = not ZTR.charView
+    tallyViewBtn:SetText(ZTR.charView and "View: Char" or "View: Account")
     UpdateTally()
 end)
 
@@ -219,7 +287,7 @@ tallyGoldText:SetJustifyH("LEFT")
 tallyGoldText:SetText("Total Gold: 0g 0s 0c")
 tallyGoldText:SetTextColor(1, 0.82, 0)
 
--- Export window
+-- ── Export window ────────────────────────────────────────────────────────────
 
 local exportFrame = AlnUI:CreateDialog({
     name       = "ZoneTimerReduxExportFrame",
@@ -228,11 +296,8 @@ local exportFrame = AlnUI:CreateDialog({
     width      = 600,
     height     = 400,
     strata     = "DIALOG",
-    level      = tallyFrame:GetFrameLevel() + 10,
     theme      = ZoneTimerSettings.goldenTheme ~= false and "gold" or "standard",
 })
-exportFrame:ClearAllPoints()
-exportFrame:SetPoint("CENTER", tallyFrame, "CENTER")
 
 local _, exportEdit = AlnUI:CreateScrollFrame(exportFrame, {
     x1 = 16, y1 = -62,
@@ -246,12 +311,6 @@ exportEdit:SetFontObject(ChatFontNormal)
 exportEdit:SetAutoFocus(false)
 exportEdit:EnableMouse(true)
 exportEdit:SetScript("OnEscapePressed", function() exportFrame:Hide() end)
-
-tallyExportBtn:SetScript("OnClick", function()
-    exportEdit:SetText(ZTR:GenerateCSV())
-    exportEdit:HighlightText()
-    exportFrame:Show()
-end)
 
 -- ── Theme ─────────────────────────────────────────────────────────────────────
 
@@ -277,10 +336,6 @@ end
 
 ZoneTimerRedux.ApplyWindowTheme = ApplyTheme
 
-mainFrame:HookScript("OnShow", ApplyTheme)
-tallyFrame:HookScript("OnShow", ApplyTheme)
-exportFrame:HookScript("OnShow", ApplyTheme)
-
 local function ShowTally()
     tallySortBtn:SetText(ZTR.sortMode == "gold" and "Sort: Gold" or "Sort: Time")
     UpdateTally()
@@ -289,51 +344,46 @@ end
 
 -- ── Public API for settings panels ───────────────────────────────────────────
 
-ZoneTimerRedux.mainFrame = mainFrame
+ZoneTimerRedux.mainFrame      = mainFrame
+ZoneTimerRedux.LayoutMainFrame = LayoutMainFrame
 
-ZoneTimerRedux.SetShowSubzone = function(enabled)
-    ZoneTimerSettings.showSubzone = enabled
-    if enabled then
-        subzoneText:Show()
-        timerText:ClearAllPoints()
-        timerText:SetPoint("TOP", subzoneText, "BOTTOM", 0, -4)
-    else
-        subzoneText:Hide()
-        timerText:ClearAllPoints()
-        timerText:SetPoint("TOP", zoneText, "BOTTOM", 0, -4)
-    end
-    mainFrame:SetHeight(CalcFrameHeight())
+ZoneTimerRedux.SetShowLabels = function(enabled)
+    ZoneTimerSettings.showLabels = enabled
+    LayoutMainFrame()
 end
 
 ZoneTimerRedux.SetFontSize = function(value)
     ZoneTimerSettings.fontSize = value
-    zoneText:SetFont("Fonts\\FRIZQT__.TTF", value + 4)
-    subzoneText:SetFont("Fonts\\FRIZQT__.TTF", value - 1)
-    timerText:SetFont("Fonts\\FRIZQT__.TTF", value)
-    mainFrame:SetHeight(CalcFrameHeight())
+    LayoutMainFrame()
 end
 
 ZoneTimerRedux.SetGoldTracking = function(enabled)
     ZoneTimerSettings.trackGold = enabled
-    if enabled then
-        goldText:Show()
-    else
-        goldText:Hide()
-    end
-    mainFrame:SetHeight(CalcFrameHeight())
+    LayoutMainFrame()
 end
 
 ZoneTimerRedux.ResetCurrentZone = function()
     if ZTR.currentZone then
         ZoneTimerSettings.times[ZTR.currentZone] = 0
         ZTR.enteredTime = time()
-        timerText:SetText("Time: 0s")
+        timerText:SetText("---")
     end
+end
+
+ZoneTimerRedux.SetWindowVisible = function(visible)
+    ZoneTimerSettings.windowVisible = visible
+    if visible then mainFrame:Show() else mainFrame:Hide() end
 end
 
 ZoneTimerRedux.SyncTallySort = function()
     tallySortBtn:SetText(ZTR.sortMode == "gold" and "Sort: Gold" or "Sort: Time")
     if tallyFrame:IsShown() then UpdateTally() end
+end
+
+ZoneTimerRedux.ShowExport = function()
+    exportEdit:SetText(ZTR:GenerateCSV())
+    exportEdit:HighlightText()
+    exportFrame:Show()
 end
 
 -- ── Event handler ─────────────────────────────────────────────────────────────
@@ -373,9 +423,10 @@ SlashCmdList["ZONETIMEREDUX"] = function(msg)
     msg = string.lower(msg or "")
 
     if msg == "forcemilestone" and ZTR.DEBUG then
-        if ZTR.currentZone then
-            ZoneTimerRedux_ShowMilestoneAlert(ZTR.currentZone, 999)
-        end
+        local zone = ZTR.currentZone or "Test Zone"
+        ZoneTimerRedux_ShowDiscoveredAlert(zone)
+        C_Timer.After(7,  function() ZoneTimerRedux_ShowMilestoneAlert(zone, 60)        end)
+        C_Timer.After(14, function() ZoneTimerRedux_ShowGoldMilestoneAlert(zone, 1000)  end)
     elseif msg == "pause" then
         ZTR:Pause()
         print("Zone Timer Redux: paused.")
@@ -392,11 +443,7 @@ SlashCmdList["ZONETIMEREDUX"] = function(msg)
         print("/zt help        – show this list")
         print("/ztt            – toggle zone tally directly")
     else
-        if mainFrame:IsShown() then
-            mainFrame:Hide()
-        else
-            mainFrame:Show()
-        end
+        ZoneTimerRedux.SetWindowVisible(not mainFrame:IsShown())
     end
 end
 
