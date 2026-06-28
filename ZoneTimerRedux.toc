@@ -1,4 +1,4 @@
-## Interface: 110207, 120001, 11508, 20505, 40402, 50504
+## Interface: 120007, 20505, 50504, 11508
 ## Title: ZoneTimer Redux
 ## Notes: Tracks time and gold per zone.
 ## Version: 1.1
