@@ -216,3 +216,25 @@ local function InitializeSettings()
 end
 
 InitializeSettings()
+
+-- ── AddOn Compartment (minimap popup, retail 10.0+) ───────────────────────────
+
+if AddonCompartmentFrame then
+    AddonCompartmentFrame:RegisterAddon({
+        text                = "Zone Timer Redux",
+        icon                = "Interface\\Icons\\inv_misc_pocketwatch_01",
+        registerForAnyClick = false,
+        func                = function()
+            Settings.OpenToCategory(category.ID)
+        end,
+        funcOnEnter         = function(button)
+            GameTooltip:SetOwner(button, "ANCHOR_LEFT")
+            GameTooltip:AddLine("Zone Timer Redux", 1, 0.82, 0)
+            GameTooltip:AddLine("Click to open settings.", 1, 1, 1)
+            GameTooltip:Show()
+        end,
+        funcOnLeave         = function()
+            GameTooltip:Hide()
+        end,
+    })
+end

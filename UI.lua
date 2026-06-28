@@ -39,11 +39,22 @@ end
 
 -- ── Main timer frame ──────────────────────────────────────────────────────────
 
+local function CalcFrameHeight()
+    local h = 39 + 3 * ZoneTimerSettings.fontSize
+    if ZoneTimerSettings.trackGold == false then
+        h = h - (ZoneTimerSettings.fontSize + 8)
+    end
+    if ZTR.DEBUG and ZoneTimerSettings.showSubzone ~= false then
+        h = h + 16
+    end
+    return h
+end
+
 local mainFrame = AlnUI:CreateDialog({
     name          = "ZoneTimerReduxFrame",
     theme         = ZoneTimerSettings.goldenTheme ~= false and "gold" or "standard",
     width         = ZoneTimerSettings.width,
-    height        = 75,
+    height        = CalcFrameHeight(),
     noCloseButton = true,
 })
 mainFrame:ClearAllPoints()
@@ -68,7 +79,6 @@ timerText:SetText("Time: 0s")
 if ZTR.DEBUG and ZoneTimerSettings.showSubzone ~= false then
     subzoneText:SetPoint("TOP", zoneText, "BOTTOM", 0, -2)
     timerText:SetPoint("TOP", subzoneText, "BOTTOM", 0, -4)
-    mainFrame:SetHeight(mainFrame:GetHeight() + 16)
 else
     subzoneText:Hide()
     timerText:SetPoint("TOP", zoneText, "BOTTOM", 0, -4)
@@ -80,7 +90,6 @@ goldText:SetText("Gold: 0g 0s 0c")
 
 if ZoneTimerSettings.trackGold == false then
     goldText:Hide()
-    mainFrame:SetHeight(mainFrame:GetHeight() - 20)
 end
 
 mainFrame:SetScript("OnUpdate", function()
@@ -284,34 +293,34 @@ ZoneTimerRedux.mainFrame = mainFrame
 
 ZoneTimerRedux.SetShowSubzone = function(enabled)
     ZoneTimerSettings.showSubzone = enabled
-    local baseHeight = ZoneTimerSettings.trackGold ~= false and 75 or 55
     if enabled then
         subzoneText:Show()
         timerText:ClearAllPoints()
         timerText:SetPoint("TOP", subzoneText, "BOTTOM", 0, -4)
-        mainFrame:SetHeight(baseHeight + 16)
     else
         subzoneText:Hide()
         timerText:ClearAllPoints()
         timerText:SetPoint("TOP", zoneText, "BOTTOM", 0, -4)
-        mainFrame:SetHeight(baseHeight)
     end
+    mainFrame:SetHeight(CalcFrameHeight())
 end
 
 ZoneTimerRedux.SetFontSize = function(value)
+    ZoneTimerSettings.fontSize = value
     zoneText:SetFont("Fonts\\FRIZQT__.TTF", value + 4)
+    subzoneText:SetFont("Fonts\\FRIZQT__.TTF", value - 1)
     timerText:SetFont("Fonts\\FRIZQT__.TTF", value)
+    mainFrame:SetHeight(CalcFrameHeight())
 end
 
 ZoneTimerRedux.SetGoldTracking = function(enabled)
     ZoneTimerSettings.trackGold = enabled
     if enabled then
         goldText:Show()
-        mainFrame:SetHeight(75)
     else
         goldText:Hide()
-        mainFrame:SetHeight(55)
     end
+    mainFrame:SetHeight(CalcFrameHeight())
 end
 
 ZoneTimerRedux.ResetCurrentZone = function()
