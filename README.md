@@ -23,20 +23,6 @@ Updated to work on most versions of World of Warcraft.
 * `/zt resume` - Resume the timer
 * `/zt help` - Show available commands
 
-
-# Compatibility
-```
-+--------------------------------+-----------+
-| Client                         | Interface |
-+--------------------------------+-----------+
-| Retail (The War Within)        |    110207 |
-| Retail PTR / next              |    120001 |
-| Classic Era                    |     11508 |
-| Classic Anniversary Edition    |     20505 |
-| Cataclysm Classic              |     40402 |
-| Mists of Pandaria Classic      |     50504 |
-+--------------------------------+-----------+
-```
 # Planned Features
 
 * Per-character tracking
