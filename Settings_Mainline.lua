@@ -1,5 +1,5 @@
 -- ZoneTimerRedux/Settings_Mainline.lua
--- Settings panel using the native Settings API (retail mainline only).
+-- Settings panel using the native Settings API
 
 if not (Settings and Settings.RegisterVerticalLayoutCategory) then return end
 
@@ -39,7 +39,8 @@ loader:SetScript("OnEvent", function(self)
         width       = { v = ZoneTimerSettings.width },
         opacity     = { v = ZoneTimerSettings.opacity },
         fontSize    = { v = ZoneTimerSettings.fontSize },
-        tallyGold   = { v = ZoneTimerSettings.tallySort == "gold" },
+        tallyGold      = { v = ZoneTimerSettings.tallySort == "gold" },
+        mainCharView   = { v = ZoneTimerSettings.mainPanelCharView == true },
     }
 
     -- ── Timer Window ──────────────────────────────────────────────────────────
@@ -89,6 +90,15 @@ loader:SetScript("OnEvent", function(self)
     Settings.SetOnValueChangedCallback("ZTR_SHOW_LABELS", function()
         ZoneTimerSettings.showLabels = p.showLabels.v
         if ZoneTimerRedux.SetShowLabels then ZoneTimerRedux.SetShowLabels(p.showLabels.v) end
+    end)
+
+    local mainCharViewSetting = Settings.RegisterAddOnSetting(
+        category, "ZTR_MAIN_CHAR_VIEW", "v", p.mainCharView,
+        Settings.VarType.Boolean, "Show character data", false)
+    Settings.CreateCheckbox(category, mainCharViewSetting,
+        "Show per-character time and gold on the main timer window instead of account-wide totals.")
+    Settings.SetOnValueChangedCallback("ZTR_MAIN_CHAR_VIEW", function()
+        ZoneTimerSettings.mainPanelCharView = p.mainCharView.v
     end)
 
     local widthSetting = Settings.RegisterAddOnSetting(
@@ -199,6 +209,14 @@ loader:SetScript("OnEvent", function(self)
         adoptInit.data._ztrDisable = true
     end
     addonLayout:AddInitializer(adoptInit)
+
+    addonLayout:AddInitializer(CreateSettingsButtonInitializer(
+        "Migrate data from the original ZoneTimer addon", "How to",
+        function()
+            if ZoneTimerRedux.ShowMigrationHelp then ZoneTimerRedux.ShowMigrationHelp() end
+        end,
+        "If you have history saved in the original ZoneTimer addon, click for step-by-step instructions on how to bring it into ZoneTimer Redux.",
+        false))
 
     Settings.RegisterAddOnCategory(category)
 

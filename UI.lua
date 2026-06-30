@@ -4,6 +4,10 @@ local ZTR = ZoneTimerRedux
 
 -- ── Milestone alert ───────────────────────────────────────────────────────────
 
+local function toastTheme()
+    return ZoneTimerSettings.goldenTheme ~= false and "gold" or "standard"
+end
+
 function ZoneTimerRedux_ShowMilestoneAlert(zone, minutes)
     local hrs    = math.floor(minutes / 60)
     local remMin = minutes % 60
@@ -15,6 +19,7 @@ function ZoneTimerRedux_ShowMilestoneAlert(zone, minutes)
         title = "Milestone Reached!",
         text  = string.format("You spent %s in %s!", timeText, zone),
         sound = 12891,
+        theme = toastTheme(),
     })
 end
 
@@ -24,6 +29,7 @@ function ZoneTimerRedux_ShowGoldMilestoneAlert(zone, gold)
         title = "Gold Milestone!",
         text  = string.format("%dg earned in %s!", gold, zone),
         sound = 12891,
+        theme = toastTheme(),
     })
 end
 
@@ -33,6 +39,7 @@ function ZoneTimerRedux_ShowDiscoveredAlert(zone)
         title = "Zone Discovered!",
         text  = string.format("New zone discovered: %s", zone),
         sound = 12889,
+        theme = toastTheme(),
     })
 end
 
@@ -312,6 +319,37 @@ exportEdit:SetAutoFocus(false)
 exportEdit:EnableMouse(true)
 exportEdit:SetScript("OnEscapePressed", function() exportFrame:Hide() end)
 
+-- ── Migration help window ─────────────────────────────────────────────────────
+
+local migrationHelpFrame = AlnUI:CreateDialog({
+    name       = "ZoneTimerReduxMigrationFrame",
+    title      = "Importing from ZoneTimer",
+    titleWidth = 400,
+    width      = 480,
+    height     = 270,
+    strata     = "DIALOG",
+    theme      = ZoneTimerSettings.goldenTheme ~= false and "gold" or "standard",
+})
+
+local migrationText = migrationHelpFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+migrationText:SetPoint("TOPLEFT",     migrationHelpFrame, "TOPLEFT",   24, -54)
+migrationText:SetPoint("BOTTOMRIGHT", migrationHelpFrame, "BOTTOMRIGHT", -24, 16)
+migrationText:SetJustifyH("LEFT")
+migrationText:SetJustifyV("TOP")
+migrationText:SetWordWrap(true)
+migrationText:SetText(
+    "If you used the original ZoneTimer addon you can bring your data over:\n\n" ..
+    "1.  Close World of Warcraft completely.\n\n" ..
+    "2.  Go to:  WTF\\Account\\<YourAccount>\\SavedVariables\\\n\n" ..
+    "3.  Copy |cffFFD700ZoneTimer.lua|r and rename the copy to\n" ..
+    "     |cffFFD700ZoneTimerRedux.lua|r, replacing the existing file.\n\n" ..
+    "4.  Start the game — your data will appear automatically."
+)
+
+ZoneTimerRedux.ShowMigrationHelp = function()
+    migrationHelpFrame:Show()
+end
+
 -- ── Theme ─────────────────────────────────────────────────────────────────────
 
 local THEME_TEXTURES = {
@@ -330,8 +368,10 @@ local function ApplyTheme()
     mainFrame:SetBackdrop(backdrop)
     tallyFrame:SetBackdrop(backdrop)
     exportFrame:SetBackdrop(backdrop)
-    if tallyFrame.titleBanner  then tallyFrame.titleBanner:SetTexture(t.header)  end
-    if exportFrame.titleBanner then exportFrame.titleBanner:SetTexture(t.header) end
+    migrationHelpFrame:SetBackdrop(backdrop)
+    if tallyFrame.titleBanner        then tallyFrame.titleBanner:SetTexture(t.header)        end
+    if exportFrame.titleBanner       then exportFrame.titleBanner:SetTexture(t.header)       end
+    if migrationHelpFrame.titleBanner then migrationHelpFrame.titleBanner:SetTexture(t.header) end
 end
 
 ZoneTimerRedux.ApplyWindowTheme = ApplyTheme

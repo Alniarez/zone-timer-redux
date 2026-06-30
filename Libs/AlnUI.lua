@@ -306,6 +306,7 @@ end
 --   title    string  large text centered slightly above middle
 --   text     string  body text centered at middle
 --   sound    number  sound ID played on fade-in
+--   theme    string  "gold" (default) or "standard"
 --   fadeIn   number  fade-in duration in seconds (default 0.3)
 --   duration number  seconds before fade-out begins (default 5)
 --   fadeOut  number  fade-out duration in seconds (default 1)
@@ -320,9 +321,10 @@ function AlnUI:ShowToast(opts)
     f:SetSize(opts.width or 400, opts.height or 100)
     f:SetPoint("TOP", UIParent, "TOP", 0, -200)
     f:SetFrameStrata("HIGH")
+    local theme = THEMES[opts.theme] or THEMES.gold
     f:SetBackdrop({
         bgFile   = "Interface\\DialogFrame\\UI-DialogBox-Background",
-        edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Gold-Border",
+        edgeFile = theme.edgeFile,
         edgeSize = 32,
         insets   = { left = 8, right = 8, top = 8, bottom = 8 },
     })

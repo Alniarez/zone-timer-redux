@@ -3,7 +3,7 @@
 ZoneTimerRedux = {}
 ZoneTimerRedux.VERSION  = "1.0"
 ZoneTimerRedux.sortMode = "time"
-ZoneTimerRedux.DEBUG    = true
+ZoneTimerRedux.DEBUG    = false
 
 -- ── Runtime state (not persisted) ────────────────────────────────────────────
 ZoneTimerRedux.currentZone = nil
@@ -35,13 +35,15 @@ if ZoneTimerSettings.goldenTheme       == nil then ZoneTimerSettings.goldenTheme
 if ZoneTimerSettings.showLabels        == nil then ZoneTimerSettings.showLabels        = true  end
 if ZoneTimerSettings.globalDataAdopted == nil then ZoneTimerSettings.globalDataAdopted = false end
 if ZoneTimerSettings.windowVisible     == nil then ZoneTimerSettings.windowVisible     = true  end
+if ZoneTimerSettings.mainPanelCharView == nil then ZoneTimerSettings.mainPanelCharView = false end
 
 ZoneTimerRedux.charView = true  -- tally shows per-character data by default
 
 ZoneGoldDB            = ZoneGoldDB or {}
-ZoneTimerCharDB       = ZoneTimerCharDB or {}
-ZoneTimerCharDB.times = ZoneTimerCharDB.times or {}
-ZoneTimerCharDB.gold  = ZoneTimerCharDB.gold  or {}
+ZoneTimerCharDB                      = ZoneTimerCharDB or {}
+ZoneTimerCharDB.times                = ZoneTimerCharDB.times or {}
+ZoneTimerCharDB.gold                 = ZoneTimerCharDB.gold  or {}
+ZoneTimerCharDB.announcedMilestones  = ZoneTimerCharDB.announcedMilestones or {}
 
 -- ── ADDON_LOADED: authoritative init on the real SavedVariables ───────────────
 -- After this event ZoneTimerSettings is the real saved table (WoW replaced the
@@ -65,13 +67,15 @@ _coreInitFrame:SetScript("OnEvent", function(self, event, addonName)
     if ZoneTimerSettings.showLabels        == nil then ZoneTimerSettings.showLabels        = true  end
     if ZoneTimerSettings.globalDataAdopted == nil then ZoneTimerSettings.globalDataAdopted = false end
     if ZoneTimerSettings.windowVisible     == nil then ZoneTimerSettings.windowVisible     = true  end
+    if ZoneTimerSettings.mainPanelCharView == nil then ZoneTimerSettings.mainPanelCharView = false end
 
     ZoneTimerRedux.sortMode = ZoneTimerSettings.tallySort
 
-    ZoneGoldDB            = ZoneGoldDB or {}
-    ZoneTimerCharDB       = ZoneTimerCharDB or {}
-    ZoneTimerCharDB.times = ZoneTimerCharDB.times or {}
-    ZoneTimerCharDB.gold  = ZoneTimerCharDB.gold  or {}
+    ZoneGoldDB                           = ZoneGoldDB or {}
+    ZoneTimerCharDB                      = ZoneTimerCharDB or {}
+    ZoneTimerCharDB.times                = ZoneTimerCharDB.times or {}
+    ZoneTimerCharDB.gold                 = ZoneTimerCharDB.gold  or {}
+    ZoneTimerCharDB.announcedMilestones  = ZoneTimerCharDB.announcedMilestones or {}
 end)
 
 -- ── Formatting ────────────────────────────────────────────────────────────────
@@ -123,12 +127,16 @@ function ZoneTimerRedux:GetActiveGoldDB()
 end
 
 function ZoneTimerRedux:GetZoneGold(zone)
+    if ZoneTimerSettings.mainPanelCharView then
+        return ZoneTimerCharDB.gold[zone] or 0
+    end
     return ZoneGoldDB[zone] or 0
 end
 
 function ZoneTimerRedux:GetCurrentTime()
     if not self.currentZone then return 0 end
-    local saved  = ZoneTimerSettings.times[self.currentZone] or 0
+    local times = ZoneTimerSettings.mainPanelCharView and ZoneTimerCharDB.times or ZoneTimerSettings.times
+    local saved = times[self.currentZone] or 0
     if self.isPaused or not self.enteredTime then return saved end
     return saved + (time() - self.enteredTime)
 end
@@ -165,6 +173,9 @@ function ZoneTimerRedux:GenerateCSV()
     return table.concat(lines, "\n")
 end
 
+-- forward declaration — defined in the Milestones section below
+local ActiveMilestones
+
 -- ── Zone lifecycle ────────────────────────────────────────────────────────────
 
 function ZoneTimerRedux:SaveCurrentZone()
@@ -188,8 +199,9 @@ function ZoneTimerRedux:EnterZone(zone)
     self.enteredTime = self.isPaused and nil or time()
     DebugPrint(string.format("Entered zone: %q (paused: %s)", tostring(zone), tostring(self.isPaused)))
 
-    local ann = ZoneTimerSettings.announcedMilestones
-    local isNew = not (ZoneTimerSettings.times[zone] and ZoneTimerSettings.times[zone] > 0)
+    local ann = ActiveMilestones()
+    local times = ZoneTimerSettings.mainPanelCharView and ZoneTimerCharDB.times or ZoneTimerSettings.times
+    local isNew = not (times[zone] and times[zone] > 0)
                and not (ann[zone] and ann[zone]["discovered"])
     if isNew and ZoneTimerSettings.showAlerts then
         ann[zone] = ann[zone] or {}
@@ -216,6 +228,12 @@ end
 
 -- ── Milestones ────────────────────────────────────────────────────────────────
 
+ActiveMilestones = function()
+    return ZoneTimerSettings.mainPanelCharView
+        and ZoneTimerCharDB.announcedMilestones
+        or  ZoneTimerSettings.announcedMilestones
+end
+
 -- 30m, 1h, 2h, 3h, 5h, then every 10h up to 200h
 do
     local m = { 30, 60, 120, 180, 300 }
@@ -225,7 +243,7 @@ end
 
 function ZoneTimerRedux:CheckMilestones(zone, totalSeconds)
     if not zone then return end
-    local ann = ZoneTimerSettings.announcedMilestones
+    local ann = ActiveMilestones()
     ann[zone] = ann[zone] or {}
     local minutes = math.floor(totalSeconds / 60)
     for _, m in ipairs(self.MILESTONES) do
@@ -241,7 +259,7 @@ end
 
 function ZoneTimerRedux:CheckGoldMilestones(zone, totalCopper)
     if not zone then return end
-    local ann = ZoneTimerSettings.announcedMilestones
+    local ann = ActiveMilestones()
     ann[zone] = ann[zone] or {}
     local goldK = math.floor(totalCopper / 1000000)  -- 1,000g = 1,000,000 copper
     for k = 1, goldK do
