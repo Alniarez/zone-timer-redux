@@ -69,6 +69,7 @@ if ZoneTimerSettings.windowVisible ~= false then mainFrame:Show() end
 local zoneText = mainFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
 zoneText:SetTextColor(1, 0.85, 0)
 zoneText:SetText("---")
+zoneText:SetWordWrap(false)
 
 local separator = mainFrame:CreateTexture(nil, "ARTWORK")
 separator:SetHeight(1)
