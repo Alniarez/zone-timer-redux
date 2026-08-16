@@ -1,7 +1,7 @@
-## Interface: 120007, 20505, 50504, 11508
+## Interface: 120007, 20505, 50504, 11508, 120100
 ## Title: ZoneTimer Redux
 ## Notes: Tracks time and gold per zone.
-## Version: 1.2.2
+## Version: 1.2.3
 ## Author: Alniarez
 ## SavedVariables: ZoneTimerSettings, ZoneGoldDB
 ## SavedVariablesPerCharacter: ZoneTimerCharDB
