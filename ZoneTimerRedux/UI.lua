@@ -477,11 +477,13 @@ SlashCmdList["ZONETIMEREDUX"] = function(msg)
     elseif msg == "tally" then
         ShowTally()
     elseif msg == "help" then
-        print("/zt                  – toggle main window")
-        print("/zt pause        – pause timer")
-        print("/zt resume      – resume timer")
-        print("/zt tally or /ztt – show zone tally")
-        print("/zt help           – show this list")
+        print("|cff33ff99ZoneTimerRedux commands:|r")
+
+        print("|cffffff00/zt|r " .. "|cffbbbbbb- toggle main window|r")
+        print("|cffffff00/zt pause|r " .. "|cffbbbbbb- pause timer|r")
+        print("|cffffff00/zt resume|r " .. "|cffbbbbbb- resume timer|r")
+        print("|cffffff00/zt tally|r or |cffffff00/ztt|r " .. "|cffbbbbbb- show zone tally|r")
+        print("|cffffff00/zt help|r " .. "|cffbbbbbb- show this list|r")
     else
         ZoneTimerRedux.SetWindowVisible(not mainFrame:IsShown())
     end
