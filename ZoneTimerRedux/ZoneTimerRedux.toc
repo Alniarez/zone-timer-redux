@@ -12,7 +12,4 @@ Core.lua
 Libs/AlnUI.lua
 UI.lua
 
-Settings_Mainline.lua
-# I think I don't need this anymore.
-# [AllowLoadGameType mainline]
-# Settings_Classic.lua  [AllowLoadGameType classic]
+Settings.lua
