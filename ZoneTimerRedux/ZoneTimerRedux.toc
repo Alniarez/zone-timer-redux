@@ -1,8 +1,9 @@
-## Interface: 120007, 20505, 50504, 11508, 120100
+## Interface: 120007, 20505, 50504, 11508, 120100, 16001
 ## Title: ZoneTimer Redux
 ## Notes: Tracks time and gold per zone.
-## Version: 1.2.3
+## Version: 1.2.4
 ## Author: Alniarez
+## IconTexture: Interface\Icons\spell_nature_timestop
 ## SavedVariables: ZoneTimerSettings, ZoneGoldDB
 ## SavedVariablesPerCharacter: ZoneTimerCharDB
 
@@ -13,5 +14,5 @@ UI.lua
 
 Settings_Mainline.lua
 # I think I don't need this anymore.
-# [AllowLoadGameType mainline]Lets sort the
+# [AllowLoadGameType mainline]
 # Settings_Classic.lua  [AllowLoadGameType classic]

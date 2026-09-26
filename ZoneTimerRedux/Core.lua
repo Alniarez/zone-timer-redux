@@ -145,9 +145,24 @@ function ZoneTimerRedux:GetSortedZones()
     local times  = self:GetActiveTimes()
     local goldDB = self:GetActiveGoldDB()
     local list   = {}
+    local liveElapsed = (self.currentZone and not self.isPaused and self.enteredTime)
+        and (time() - self.enteredTime) or nil
+    local sawCurrentZone = false
+
     for zone, t in pairs(times) do
+        if liveElapsed and zone == self.currentZone then
+            t = t + liveElapsed
+            sawCurrentZone = true
+        end
         table.insert(list, { zone = zone, time = t, gold = goldDB[zone] or 0 })
     end
+
+    -- currentZone may have no saved time yet (freshly entered zone), so it
+    -- wouldn't otherwise appear in the list until the timer is saved.
+    if liveElapsed and not sawCurrentZone then
+        table.insert(list, { zone = self.currentZone, time = liveElapsed, gold = goldDB[self.currentZone] or 0 })
+    end
+
     table.sort(list, function(a, b)
         if self.sortMode == "gold" then return a.gold > b.gold end
         return a.time > b.time
