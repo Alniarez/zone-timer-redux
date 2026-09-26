@@ -2,7 +2,9 @@
 
 ZoneTimerRedux = {}
 ZoneTimerRedux.VERSION  = "1.0"
-ZoneTimerRedux.sortMode = "time"
+-- tally sort: "zone", "time", "gold", or nil for the default order
+ZoneTimerRedux.sortMode      = "time"
+ZoneTimerRedux.sortAscending = false
 ZoneTimerRedux.DEBUG    = false
 
 -- ── Runtime state (not persisted) ────────────────────────────────────────────
@@ -69,7 +71,9 @@ _coreInitFrame:SetScript("OnEvent", function(self, event, addonName)
     if ZoneTimerSettings.windowVisible     == nil then ZoneTimerSettings.windowVisible     = true  end
     if ZoneTimerSettings.mainPanelCharView == nil then ZoneTimerSettings.mainPanelCharView = false end
 
-    ZoneTimerRedux.sortMode = ZoneTimerSettings.tallySort
+    -- "none" saves the unsorted state; tallySort itself defaults to "time"
+    ZoneTimerRedux.sortMode      = ZoneTimerSettings.tallySort ~= "none" and ZoneTimerSettings.tallySort or nil
+    ZoneTimerRedux.sortAscending = ZoneTimerSettings.tallySortAscending == true
 
     ZoneGoldDB                           = ZoneGoldDB or {}
     ZoneTimerCharDB                      = ZoneTimerCharDB or {}
@@ -163,9 +167,15 @@ function ZoneTimerRedux:GetSortedZones()
         table.insert(list, { zone = self.currentZone, time = liveElapsed, gold = goldDB[self.currentZone] or 0 })
     end
 
+    local key, ascending = self.sortMode, self.sortAscending
     table.sort(list, function(a, b)
-        if self.sortMode == "gold" then return a.gold > b.gold end
-        return a.time > b.time
+        -- default order: most time first
+        if key == nil then return a.time > b.time end
+        local x, y = a[key], b[key]
+        if key == "zone" then x, y = x:lower(), y:lower() end
+        if x == y then return a.zone < b.zone end
+        if ascending then return x < y end
+        return x > y
     end)
     return list
 end

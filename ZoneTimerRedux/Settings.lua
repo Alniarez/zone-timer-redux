@@ -158,8 +158,11 @@ loader:SetScript("OnEvent", function(self)
     Settings.CreateCheckbox(category, tallySortSetting,
         "Sort the tally window by gold earned instead of time spent.")
     Settings.SetOnValueChangedCallback("ZTR_TALLY_GOLD_SORT", function()
-        ZoneTimerSettings.tallySort = p.tallyGold.v and "gold" or "time"
-        ZTR.sortMode = ZoneTimerSettings.tallySort
+        -- the checkbox means "most gold first", or "most time first" when off
+        ZoneTimerSettings.tallySort          = p.tallyGold.v and "gold" or "time"
+        ZoneTimerSettings.tallySortAscending = false
+        ZTR.sortMode      = ZoneTimerSettings.tallySort
+        ZTR.sortAscending = false
         if ZoneTimerRedux.SyncTallySort then ZoneTimerRedux.SyncTallySort() end
     end)
 

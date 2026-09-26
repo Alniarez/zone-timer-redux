@@ -71,9 +71,7 @@ zoneText:SetTextColor(1, 0.85, 0)
 zoneText:SetText("---")
 zoneText:SetWordWrap(false)
 
-local separator = mainFrame:CreateTexture(nil, "ARTWORK")
-separator:SetHeight(1)
-separator:SetColorTexture(0.55, 0.45, 0.05, 0.6)
+local separator = AlnUI:CreateSeparator(mainFrame, { x1 = 16, x2 = -16, color = { 0.55, 0.45, 0.05, 0.6 } })
 
 local timerLabel = mainFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
 timerLabel:SetTextColor(0.5, 0.5, 0.5)
@@ -182,7 +180,6 @@ end)
 
 -- ── Tally window ──────────────────────────────────────────────────────────────
 
-local tallyRows     = {}
 local tallyTimeText
 local tallyGoldText
 local UpdateTally
@@ -194,106 +191,136 @@ local tallyFrame = AlnUI:CreateDialog({
     width      = 520,
     height     = 520,
     theme      = ZoneTimerSettings.goldenTheme ~= false and "gold" or "standard",
+    -- wide enough for the title banner and the totals
+    resizable  = true,
+    minWidth   = 420,
+    minHeight  = 250,
+    onResize   = function(w, h)
+        ZoneTimerSettings.tallyWidth  = w
+        ZoneTimerSettings.tallyHeight = h
+    end,
 })
 
-AlnUI:CreateColumnRow(tallyFrame, { font = "GameFontNormal", x = 24, y = -44 },
-{
-    { text = "Zone", width = 210, justify = "LEFT" },
-    { text = "Time", width = 120, justify = "RIGHT" },
-    { text = "Gold", width = 130, justify = "RIGHT", gap = 6 },
+-- Click a column to sort: ascending, descending, then back to the default
+-- order (most time first). Zone fills the width left over, so the columns
+-- follow the window size.
+-- right = 40: the list's 36 inset for the scroll bar + the rows' 4
+local tallyHeader = AlnUI:CreateSortHeader(tallyFrame, {
+    x = 24, y = -60, right = 40,
+    onSort = function(key, ascending)
+        ZTR.sortMode, ZTR.sortAscending = key, ascending == true
+        ZoneTimerSettings.tallySort          = key or "none"
+        ZoneTimerSettings.tallySortAscending = ascending == true
+        UpdateTally()
+    end,
+}, {
+    { text = "Zone", key = "zone", fill  = true, justify = "LEFT" },
+    { text = "Time", key = "time", width = 116,  justify = "RIGHT" },
+    { text = "Gold", key = "gold", width = 128,  justify = "RIGHT", gap = 6 },
 })
 
-local _, tallyContent = AlnUI:CreateScrollFrame(tallyFrame, {
-    x1 = 18,  y1 = -62,
-    x2 = -36, y2 = 50,
-    contentWidth = 360, contentHeight = 400,
-})
+AlnUI:CreateSeparator(tallyFrame, { y = -76, x1 = 18, x2 = -18 })
 
-local tallySortBtn = AlnUI:CreateButton(tallyFrame, { width = 120, height = 22, text = "Sort: Time" })
-tallySortBtn:SetPoint("BOTTOMRIGHT", -16, 16)
-
-local tallyViewBtn = AlnUI:CreateButton(tallyFrame, { width = 110, height = 22, text = "View: Char" })
-tallyViewBtn:SetPoint("BOTTOMRIGHT", tallySortBtn, "BOTTOMLEFT", -6, 0)
-
-tallySortBtn:SetScript("OnClick", function()
-    ZTR.sortMode = ZTR.sortMode == "time" and "gold" or "time"
-    ZoneTimerSettings.tallySort = ZTR.sortMode
-    tallySortBtn:SetText(ZTR.sortMode == "gold" and "Sort: Gold" or "Sort: Time")
-    UpdateTally()
-end)
-
-tallyViewBtn:SetScript("OnClick", function()
-    ZTR.charView = not ZTR.charView
-    tallyViewBtn:SetText(ZTR.charView and "View: Char" or "View: Account")
-    UpdateTally()
-end)
-
-local function ClearTallyRows()
-    for _, fs in ipairs(tallyRows) do
-        fs:Hide()
-        fs:SetParent(nil)
-    end
-    wipe(tallyRows)
+-- Shows the full zone or gold text when its column is cut off
+local function TallyRowTooltip(row)
+    local zone, gold = row.cols[1], row.cols[3]
+    if zone:IsTruncated() then return zone:GetText() end
+    if gold:IsTruncated() then return gold:GetText() end
 end
 
-function UpdateTally()
-    ClearTallyRows()
+local tallyList = AlnUI:CreateScrollList(tallyFrame, {
+    x1 = 18,  y1 = -80,
+    x2 = -36, y2 = 56,
+    rowHeight = 22,
+    x         = 6,
+    right     = 4,
+    columns   = {
+        { fill  = true, justify = "LEFT",  wordWrap = false },
+        { width = 116,  justify = "RIGHT" },
+        { width = 128,  justify = "RIGHT", wordWrap = false, gap = 6 },
+    },
+    -- rows are recycled, so the tooltip reads whatever the row shows now
+    onRowInit = function(row)
+        if not row.alnTooltip then AlnUI:AddTooltip(row, TallyRowTooltip) end
+    end,
+})
 
+
+-- anchored to the bottom so it stays just under the list while resizing
+local tallyBottomLine = AlnUI:CreateSeparator(tallyFrame, { x1 = 18, x2 = -18 })
+tallyBottomLine:ClearAllPoints()
+tallyBottomLine:SetPoint("BOTTOMLEFT", 18, 52)
+tallyBottomLine:SetPoint("BOTTOMRIGHT", -18, 52)
+
+-- Character / Account view: native tabs standing on a gold line under the
+-- title. Clients with only bottom tabs get them below the window, and
+-- clients with neither keep a toggle button.
+local VIEW_CHARACTER, VIEW_ACCOUNT = 1, 2
+
+local function SetView(index)
+    ZTR.charView = index == VIEW_CHARACTER
+    UpdateTally()
+end
+
+local tabStyle = (AlnUI:HasTabs("top") and "top") or (AlnUI:HasTabs("bottom") and "bottom")
+if tabStyle then
+    local viewTabs = AlnUI:CreateTabs(tallyFrame, {
+        tabs     = { "Character", "Account" },
+        style    = tabStyle,
+        selected = ZTR.charView and VIEW_CHARACTER or VIEW_ACCOUNT,
+        onSelect = SetView,
+    })
+    if tabStyle == "top" then
+        viewTabs:SetPoint("BOTTOMLEFT", tallyFrame, "TOPLEFT", 20, -50)
+        AlnUI:CreateSeparator(tallyFrame, { y = -50, x1 = 16, x2 = -16, color = { 1, 0.82, 0 } })
+    else
+        viewTabs:SetPoint("TOPLEFT", tallyFrame, "BOTTOMLEFT", 12, 6)
+    end
+else
+    local viewBtn = AlnUI:CreateButton(tallyFrame, {
+        width = 110, height = 22,
+        text  = ZTR.charView and "View: Char" or "View: Account",
+        tooltip = "View", tooltipText = "Show this character's data or account-wide totals.",
+        onClick = function(self)
+            SetView(ZTR.charView and VIEW_ACCOUNT or VIEW_CHARACTER)
+            self:SetText(ZTR.charView and "View: Char" or "View: Account")
+        end,
+    })
+    -- where the tabs would be
+    viewBtn:SetPoint("TOPLEFT", 20, -26)
+end
+
+
+
+function UpdateTally()
     local data      = ZTR:GetSortedZones()
-    local rowHeight = 22
+    local rows      = {}
     local totalTime = 0
     local totalGold = 0
 
     for i, entry in ipairs(data) do
-        local y       = -8 - (i - 1) * rowHeight
-        local goldStr = ZTR:ColorGold(ZTR:FormatGold(entry.gold))
-
-        local cols = AlnUI:CreateColumnRow(tallyContent, { y = y }, {
-            { text = entry.zone,                                 width = 210, justify = "LEFT",  wordWrap = false },
-            { text = ZTR:ColorTime(ZTR:FormatTime(entry.time)), width = 120, justify = "RIGHT" },
-            { text = goldStr,                                    width = 130, justify = "RIGHT", wordWrap = false, gap = 6 },
-        })
-
-        cols[1]:SetScript("OnEnter", function(self)
-            if self:IsTruncated() then
-                GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-                GameTooltip:SetText(entry.zone, 1, 1, 1, true)
-                GameTooltip:Show()
-            end
-        end)
-        cols[1]:SetScript("OnLeave", GameTooltip_Hide)
-
-        cols[3]:SetScript("OnEnter", function(self)
-            if self:IsTruncated() then
-                GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-                GameTooltip:SetText(goldStr, 1, 1, 1, true)
-                GameTooltip:Show()
-            end
-        end)
-        cols[3]:SetScript("OnLeave", GameTooltip_Hide)
-
-        for _, fs in ipairs(cols) do table.insert(tallyRows, fs) end
-
+        rows[i] = {
+            entry.zone,
+            ZTR:ColorTime(ZTR:FormatTime(entry.time)),
+            ZTR:ColorGold(ZTR:FormatGold(entry.gold)),
+        }
         totalTime = totalTime + entry.time
         totalGold = totalGold + entry.gold
     end
 
-    tallyContent:SetHeight(math.max(400, (#data + 1) * rowHeight))
-    tallyTimeText:SetText("Total Time: " .. ZTR:ColorTime(ZTR:FormatTime(totalTime)))
-    tallyGoldText:SetText("Total Gold: " .. ZTR:ColorGold(ZTR:FormatGold(totalGold)))
+    tallyList:SetData(rows)
+    -- the totals follow the selected tab, so say which one they are
+    local scope = ZTR.charView and "Character" or "Account"
+    tallyTimeText:SetText(scope .. " Time: " .. ZTR:ColorTime(ZTR:FormatTime(totalTime)))
+    tallyGoldText:SetText(scope .. " Gold: " .. ZTR:ColorGold(ZTR:FormatGold(totalGold)))
 end
 
-tallyTimeText = tallyFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+-- totals in the bottom-left corner, under the list
+tallyTimeText = AlnUI:CreateLabel(tallyFrame, { text = "Character Time: 0h 0m 0s", color = { 1, 0.82, 0 } })
 tallyTimeText:SetPoint("BOTTOMLEFT", 20, 30)
-tallyTimeText:SetJustifyH("LEFT")
-tallyTimeText:SetText("Total Time: 0h 0m 0s")
-tallyTimeText:SetTextColor(1, 0.82, 0)
 
-tallyGoldText = tallyFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+tallyGoldText = AlnUI:CreateLabel(tallyFrame, { text = "Character Gold: 0g 0s 0c", color = { 1, 0.82, 0 } })
 tallyGoldText:SetPoint("TOPLEFT", tallyTimeText, "BOTTOMLEFT", 0, -2)
-tallyGoldText:SetJustifyH("LEFT")
-tallyGoldText:SetText("Total Gold: 0g 0s 0c")
-tallyGoldText:SetTextColor(1, 0.82, 0)
 
 -- ── Export window ────────────────────────────────────────────────────────────
 
@@ -353,32 +380,27 @@ end
 
 -- ── Theme ─────────────────────────────────────────────────────────────────────
 
-local THEME_TEXTURES = {
-    gold     = { edge = "Interface\\DialogFrame\\UI-DialogBox-Gold-Border",   header = "Interface\\DialogFrame\\UI-DialogBox-Gold-Header" },
-    standard = { edge = "Interface\\DialogFrame\\UI-DialogBox-Border",        header = "Interface\\DialogFrame\\UI-DialogBox-Header" },
-}
-
 local function ApplyTheme()
-    local t = ZoneTimerSettings.goldenTheme ~= false and THEME_TEXTURES.gold or THEME_TEXTURES.standard
-    local backdrop = {
-        bgFile   = "Interface\\DialogFrame\\UI-DialogBox-Background",
-        edgeFile = t.edge,
-        edgeSize = 32,
-        insets   = { left = 8, right = 8, top = 8, bottom = 8 },
-    }
-    mainFrame:SetBackdrop(backdrop)
-    tallyFrame:SetBackdrop(backdrop)
-    exportFrame:SetBackdrop(backdrop)
-    migrationHelpFrame:SetBackdrop(backdrop)
-    if tallyFrame.titleBanner        then tallyFrame.titleBanner:SetTexture(t.header)        end
-    if exportFrame.titleBanner       then exportFrame.titleBanner:SetTexture(t.header)       end
-    if migrationHelpFrame.titleBanner then migrationHelpFrame.titleBanner:SetTexture(t.header) end
+    local theme = ZoneTimerSettings.goldenTheme ~= false and "gold" or "standard"
+    mainFrame:SetTheme(theme)
+    tallyFrame:SetTheme(theme)
+    exportFrame:SetTheme(theme)
+    migrationHelpFrame:SetTheme(theme)
 end
 
 ZoneTimerRedux.ApplyWindowTheme = ApplyTheme
 
+local tallySizeRestored = false
+
 local function ShowTally()
-    tallySortBtn:SetText(ZTR.sortMode == "gold" and "Sort: Gold" or "Sort: Time")
+    -- SavedVariables aren't loaded when this file runs, so restore here
+    if not tallySizeRestored and ZoneTimerSettings.tallyWidth then
+        tallyFrame:SetClampedSize(ZoneTimerSettings.tallyWidth, ZoneTimerSettings.tallyHeight)
+    end
+    tallySizeRestored = true
+
+    -- the saved sort is loaded after this file runs
+    tallyHeader:SetSort(ZTR.sortMode, ZTR.sortAscending)
     UpdateTally()
     tallyFrame:Show()
 end
@@ -417,7 +439,7 @@ ZoneTimerRedux.SetWindowVisible = function(visible)
 end
 
 ZoneTimerRedux.SyncTallySort = function()
-    tallySortBtn:SetText(ZTR.sortMode == "gold" and "Sort: Gold" or "Sort: Time")
+    tallyHeader:SetSort(ZTR.sortMode, ZTR.sortAscending)
     if tallyFrame:IsShown() then UpdateTally() end
 end
 
@@ -465,9 +487,10 @@ SlashCmdList["ZONETIMEREDUX"] = function(msg)
 
     if msg == "forcemilestone" and ZTR.DEBUG then
         local zone = ZTR.currentZone or "Test Zone"
+        -- toasts queue, so these play one after another
         ZoneTimerRedux_ShowDiscoveredAlert(zone)
-        C_Timer.After(7,  function() ZoneTimerRedux_ShowMilestoneAlert(zone, 60)        end)
-        C_Timer.After(14, function() ZoneTimerRedux_ShowGoldMilestoneAlert(zone, 1000)  end)
+        ZoneTimerRedux_ShowMilestoneAlert(zone, 60)
+        ZoneTimerRedux_ShowGoldMilestoneAlert(zone, 1000)
     elseif msg == "pause" then
         ZTR:Pause()
         print("Zone Timer Redux: paused.")
