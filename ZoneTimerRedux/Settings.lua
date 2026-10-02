@@ -31,7 +31,7 @@ loader:SetScript("OnEvent", function(self)
     -- only these proxy tables, never ZoneTimerSettings directly.  Callbacks then
     -- sync the confirmed user change back into ZoneTimerSettings.
     local p = {
-        goldenTheme = { v = ZoneTimerSettings.goldenTheme ~= false },
+        theme       = { v = ZoneTimerSettings.theme or "gold" },
         windowVis   = { v = ZoneTimerSettings.windowVisible ~= false },
         showLabels  = { v = ZoneTimerSettings.showLabels ~= false },
         showAlerts  = { v = ZoneTimerSettings.showAlerts ~= false },
@@ -60,13 +60,30 @@ loader:SetScript("OnEvent", function(self)
         end
     end)
 
-    local goldenThemeSetting = Settings.RegisterAddOnSetting(
-        category, "ZTR_GOLDEN_THEME", "v", p.goldenTheme,
-        Settings.VarType.Boolean, "Golden theme", true)
-    Settings.CreateCheckbox(category, goldenThemeSetting,
-        "Use a gold border and header on the timer and tally windows.")
-    Settings.SetOnValueChangedCallback("ZTR_GOLDEN_THEME", function()
-        ZoneTimerSettings.goldenTheme = p.goldenTheme.v
+    -- Only the themes that suit every frame here: the timer window and the
+    -- toasts have no title bar or close button, so the window-only Basic
+    -- and Panel are left out (GetThemes("toast")).
+    local THEME_DESCRIPTIONS = {
+        gold     = "A gold dialog border with a title banner.",
+        modern   = "The Game Menu's border and header.",
+        standard = "A grey dialog border with a title banner.",
+        tooltip  = "A tooltip's thin border.",
+    }
+    local function GetThemeOptions()
+        local container = Settings.CreateControlTextContainer()
+        for _, name in ipairs(AlnUI:GetThemes("toast")) do
+            container:Add(name, name:sub(1, 1):upper() .. name:sub(2), THEME_DESCRIPTIONS[name])
+        end
+        return container:GetData()
+    end
+
+    local themeSetting = Settings.RegisterAddOnSetting(
+        category, "ZTR_THEME", "v", p.theme,
+        Settings.VarType.String, "Window theme", "gold")
+    Settings.CreateDropdown(category, themeSetting, GetThemeOptions,
+        "The border style of every Zone Timer Redux window and of the milestone toasts.")
+    Settings.SetOnValueChangedCallback("ZTR_THEME", function()
+        ZoneTimerSettings.theme = p.theme.v
         if ZoneTimerRedux.ApplyWindowTheme then ZoneTimerRedux.ApplyWindowTheme() end
     end)
 

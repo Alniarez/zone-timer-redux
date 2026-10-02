@@ -4,9 +4,11 @@ local ZTR = ZoneTimerRedux
 
 -- ── Milestone alert ───────────────────────────────────────────────────────────
 
-local function toastTheme()
-    return ZoneTimerSettings.goldenTheme ~= false and "gold" or "standard"
+-- The theme picked in the settings, for every window and toast
+local function windowTheme()
+    return ZoneTimerSettings.theme or "gold"
 end
+local toastTheme = windowTheme
 
 function ZoneTimerRedux_ShowMilestoneAlert(zone, minutes)
     local hrs    = math.floor(minutes / 60)
@@ -56,7 +58,7 @@ end
 
 local mainFrame = AlnUI:CreateDialog({
     name          = "ZoneTimerReduxFrame",
-    theme         = ZoneTimerSettings.goldenTheme ~= false and "gold" or "standard",
+    theme         = windowTheme(),
     width         = ZoneTimerSettings.width,
     height        = CalcFrameHeight(),
     noCloseButton = true,
@@ -190,7 +192,7 @@ local tallyFrame = AlnUI:CreateDialog({
     titleWidth = 360,
     width      = 520,
     height     = 520,
-    theme      = ZoneTimerSettings.goldenTheme ~= false and "gold" or "standard",
+    theme      = windowTheme(),
     -- wide enough for the title banner and the totals
     resizable  = true,
     minWidth   = 420,
@@ -331,7 +333,7 @@ local exportFrame = AlnUI:CreateDialog({
     width      = 600,
     height     = 400,
     strata     = "DIALOG",
-    theme      = ZoneTimerSettings.goldenTheme ~= false and "gold" or "standard",
+    theme      = windowTheme(),
 })
 
 local _, exportEdit = AlnUI:CreateScrollFrame(exportFrame, {
@@ -356,7 +358,7 @@ local migrationHelpFrame = AlnUI:CreateDialog({
     width      = 480,
     height     = 270,
     strata     = "DIALOG",
-    theme      = ZoneTimerSettings.goldenTheme ~= false and "gold" or "standard",
+    theme      = windowTheme(),
 })
 
 local migrationText = migrationHelpFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
@@ -381,7 +383,7 @@ end
 -- ── Theme ─────────────────────────────────────────────────────────────────────
 
 local function ApplyTheme()
-    local theme = ZoneTimerSettings.goldenTheme ~= false and "gold" or "standard"
+    local theme = windowTheme()
     mainFrame:SetTheme(theme)
     tallyFrame:SetTheme(theme)
     exportFrame:SetTheme(theme)

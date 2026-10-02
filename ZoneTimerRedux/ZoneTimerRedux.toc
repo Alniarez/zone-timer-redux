@@ -1,7 +1,7 @@
 ## Interface: 120007, 20505, 50504, 11508, 120100, 16001
 ## Title: ZoneTimer Redux
 ## Notes: Tracks time and gold per zone.
-## Version: 1.2.4
+## Version: 1.2.5
 ## Author: Alniarez
 ## IconTexture: Interface\Icons\spell_nature_timestop
 ## SavedVariables: ZoneTimerSettings, ZoneGoldDB

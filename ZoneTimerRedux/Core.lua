@@ -34,6 +34,10 @@ if ZoneTimerSettings.trackGold         == nil then ZoneTimerSettings.trackGold  
 if ZoneTimerSettings.showAlerts        == nil then ZoneTimerSettings.showAlerts        = true  end
 if ZoneTimerSettings.tallySort         == nil then ZoneTimerSettings.tallySort         = "time" end
 if ZoneTimerSettings.goldenTheme       == nil then ZoneTimerSettings.goldenTheme       = true  end
+-- the window theme used to be the goldenTheme checkbox; carry it over once
+if ZoneTimerSettings.theme == nil then
+    ZoneTimerSettings.theme = ZoneTimerSettings.goldenTheme ~= false and "gold" or "standard"
+end
 if ZoneTimerSettings.showLabels        == nil then ZoneTimerSettings.showLabels        = true  end
 if ZoneTimerSettings.globalDataAdopted == nil then ZoneTimerSettings.globalDataAdopted = false end
 if ZoneTimerSettings.windowVisible     == nil then ZoneTimerSettings.windowVisible     = true  end
@@ -66,6 +70,9 @@ _coreInitFrame:SetScript("OnEvent", function(self, event, addonName)
     if ZoneTimerSettings.showAlerts        == nil then ZoneTimerSettings.showAlerts        = true  end
     if ZoneTimerSettings.tallySort         == nil then ZoneTimerSettings.tallySort         = "time" end
     if ZoneTimerSettings.goldenTheme       == nil then ZoneTimerSettings.goldenTheme       = true  end
+    if ZoneTimerSettings.theme == nil then
+        ZoneTimerSettings.theme = ZoneTimerSettings.goldenTheme ~= false and "gold" or "standard"
+    end
     if ZoneTimerSettings.showLabels        == nil then ZoneTimerSettings.showLabels        = true  end
     if ZoneTimerSettings.globalDataAdopted == nil then ZoneTimerSettings.globalDataAdopted = false end
     if ZoneTimerSettings.windowVisible     == nil then ZoneTimerSettings.windowVisible     = true  end
