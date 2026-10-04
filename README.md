@@ -13,14 +13,14 @@ Updated to work on most versions of World of Warcraft.
 - CSV export of tracked data
 - Milestone notifications for time and gold thresholds
 - Automatically pauses while AFK
-- Optional golden UI theme
-- Native settings panel (Interface → AddOns → Zone Timer Redux)
+- Window themes
+- Native settings panel (Interface -> AddOns -> Zone Timer Redux)
 
 ## Commands
 
-- `/zt` — Toggle the timer window
-- `/zt tally` — Open the zone tally
-- `/ztt` — Same as `/zt tally`
-- `/zt pause` — Pause the timer
-- `/zt resume` — Resume the timer
-- `/zt help` — Show available commands
+- `/zt` - Toggle the timer window
+- `/zt tally` - Open the zone tally
+- `/ztt` - Same as `/zt tally`
+- `/zt pause` - Pause the timer
+- `/zt resume` - Resume the timer
+- `/zt help` - Show available commands

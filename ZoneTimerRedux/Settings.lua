@@ -43,7 +43,7 @@ loader:SetScript("OnEvent", function(self)
         mainCharView   = { v = ZoneTimerSettings.mainPanelCharView == true },
     }
 
-    -- ── Timer Window ──────────────────────────────────────────────────────────
+    -- Timer Window -------------------------------------------------------------
     -- Visibility, layout, and visual style of the main timer frame.
 
     addonLayout:AddInitializer(CreateSettingsListSectionHeaderInitializer("Timer Window"))
@@ -143,7 +143,7 @@ loader:SetScript("OnEvent", function(self)
         ZoneTimerRedux.mainFrame:SetAlpha(p.opacity.v)
     end)
 
-    -- ── Tracking ──────────────────────────────────────────────────────────────
+    -- Tracking -----------------------------------------------------------------
     -- What data to collect and how to display it.
 
     addonLayout:AddInitializer(CreateSettingsListSectionHeaderInitializer("Tracking"))
@@ -183,7 +183,7 @@ loader:SetScript("OnEvent", function(self)
         if ZoneTimerRedux.SyncTallySort then ZoneTimerRedux.SyncTallySort() end
     end)
 
-    -- ── Data ──────────────────────────────────────────────────────────────────
+    -- Data ---------------------------------------------------------------------
     -- Export and reset tools for recorded zone data.
 
     addonLayout:AddInitializer(CreateSettingsListSectionHeaderInitializer("Data"))
@@ -254,7 +254,7 @@ loader:SetScript("OnEvent", function(self)
         end
     end
 
-    -- ── AddOn Compartment ─────────────────────────────────────────────────────
+    -- AddOn Compartment --------------------------------------------------------
 
     if AddonCompartmentFrame then
         AddonCompartmentFrame:RegisterAddon({

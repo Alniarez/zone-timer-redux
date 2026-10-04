@@ -2,6 +2,7 @@ package-as: ZoneTimerRedux
 
 ignore:
   - README.md
+  - CHANGELOG.md
   - LICENSE
   - .gitignore
   - .github

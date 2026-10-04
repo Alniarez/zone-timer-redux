@@ -2,7 +2,7 @@
 
 local ZTR = ZoneTimerRedux
 
--- ── Milestone alert ───────────────────────────────────────────────────────────
+-- Milestone alert --------------------------------------------------------------
 
 -- The theme picked in the settings, for every window and toast
 local function windowTheme()
@@ -45,7 +45,7 @@ function ZoneTimerRedux_ShowDiscoveredAlert(zone)
     })
 end
 
--- ── Main timer frame ──────────────────────────────────────────────────────────
+-- Main timer frame -------------------------------------------------------------
 
 local function CalcFrameHeight()
     local fs = ZoneTimerSettings.fontSize
@@ -110,7 +110,7 @@ local function LayoutMainFrame()
     goldText:SetFont("Fonts\\FRIZQT__.TTF", fs)
 
     -- Y offsets from frame TOP (negative = downward).
-    -- WoW font line height ≈ font_size * 1.2, so zone text (fs+4 font) takes ~fs+8 px.
+    -- WoW font line height ~= font_size * 1.2, so zone text (fs+4 font) takes ~fs+8 px.
     local zoneH  = fs + 8
     local yZone  = -14
     local ySep   = -(14 + zoneH + 6)
@@ -180,7 +180,7 @@ mainFrame:SetScript("OnUpdate", function()
     ZTR:CheckMilestones(ZTR.currentZone, total)
 end)
 
--- ── Tally window ──────────────────────────────────────────────────────────────
+-- Tally window -----------------------------------------------------------------
 
 local tallyTimeText
 local tallyGoldText
@@ -324,11 +324,11 @@ tallyTimeText:SetPoint("BOTTOMLEFT", 20, 30)
 tallyGoldText = AlnUI:CreateLabel(tallyFrame, { text = "Character Gold: 0g 0s 0c", color = { 1, 0.82, 0 } })
 tallyGoldText:SetPoint("TOPLEFT", tallyTimeText, "BOTTOMLEFT", 0, -2)
 
--- ── Export window ────────────────────────────────────────────────────────────
+-- Export window ---------------------------------------------------------------
 
 local exportFrame = AlnUI:CreateDialog({
     name       = "ZoneTimerReduxExportFrame",
-    title      = "Zone Timer – CSV Export",
+    title      = "Zone Timer - CSV Export",
     titleWidth = 520,
     width      = 600,
     height     = 400,
@@ -349,7 +349,7 @@ exportEdit:SetAutoFocus(false)
 exportEdit:EnableMouse(true)
 exportEdit:SetScript("OnEscapePressed", function() exportFrame:Hide() end)
 
--- ── Migration help window ─────────────────────────────────────────────────────
+-- Migration help window --------------------------------------------------------
 
 local migrationHelpFrame = AlnUI:CreateDialog({
     name       = "ZoneTimerReduxMigrationFrame",
@@ -373,14 +373,14 @@ migrationText:SetText(
     "2.  Go to:  WTF\\Account\\<YourAccount>\\SavedVariables\\\n\n" ..
     "3.  Copy |cffFFD700ZoneTimer.lua|r and rename the copy to\n" ..
     "     |cffFFD700ZoneTimerRedux.lua|r, replacing the existing file.\n\n" ..
-    "4.  Start the game — your data will appear automatically."
+    "4.  Start the game - your data will appear automatically."
 )
 
 ZoneTimerRedux.ShowMigrationHelp = function()
     migrationHelpFrame:Show()
 end
 
--- ── Theme ─────────────────────────────────────────────────────────────────────
+-- Theme ------------------------------------------------------------------------
 
 local function ApplyTheme()
     local theme = windowTheme()
@@ -407,7 +407,7 @@ local function ShowTally()
     tallyFrame:Show()
 end
 
--- ── Public API for settings panels ───────────────────────────────────────────
+-- Public API for settings panels ----------------------------------------------
 
 ZoneTimerRedux.mainFrame      = mainFrame
 ZoneTimerRedux.LayoutMainFrame = LayoutMainFrame
@@ -451,7 +451,7 @@ ZoneTimerRedux.ShowExport = function()
     exportFrame:Show()
 end
 
--- ── Event handler ─────────────────────────────────────────────────────────────
+-- Event handler ----------------------------------------------------------------
 
 local eventFrame = CreateFrame("Frame")
 eventFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
@@ -481,7 +481,7 @@ eventFrame:SetScript("OnEvent", function(_, event)
     zoneText:SetText(ZTR.currentZone or "(loading...)")
 end)
 
--- ── Slash commands ────────────────────────────────────────────────────────────
+-- Slash commands ---------------------------------------------------------------
 
 SLASH_ZONETIMEREDUX1 = "/zt"
 SlashCmdList["ZONETIMEREDUX"] = function(msg)

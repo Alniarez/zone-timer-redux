@@ -5,21 +5,21 @@ ZoneTimerRedux.VERSION  = "1.0"
 -- tally sort: "zone", "time", "gold", or nil for the default order
 ZoneTimerRedux.sortMode      = "time"
 ZoneTimerRedux.sortAscending = false
-ZoneTimerRedux.DEBUG    = false
+ZoneTimerRedux.DEBUG    = AlniDev and AlniDev.debug.ZoneTimerRedux or false
 
--- ── Runtime state (not persisted) ────────────────────────────────────────────
+-- Runtime state (not persisted) -----------------------------------------------
 ZoneTimerRedux.currentZone = nil
 ZoneTimerRedux.enteredTime = nil
 ZoneTimerRedux.isPaused    = false
 
--- ── Debug helper ─────────────────────────────────────────────────────────────
+-- Debug helper ----------------------------------------------------------------
 
 local function DebugPrint(...)
     if not ZoneTimerRedux.DEBUG then return end
     print("|cff33ff99ZoneTimerRedux:|r", ...)
 end
 
--- ── SavedVariable placeholder (file-load-time only) ──────────────────────────
+-- SavedVariable placeholder (file-load-time only) -----------------------------
 -- SavedVariables are NOT loaded yet when addon files execute; WoW makes them
 -- available only after ADDON_LOADED fires.  This placeholder lets UI.lua create
 -- its frames without crashing.  The authoritative initialization happens in the
@@ -51,7 +51,7 @@ ZoneTimerCharDB.times                = ZoneTimerCharDB.times or {}
 ZoneTimerCharDB.gold                 = ZoneTimerCharDB.gold  or {}
 ZoneTimerCharDB.announcedMilestones  = ZoneTimerCharDB.announcedMilestones or {}
 
--- ── ADDON_LOADED: authoritative init on the real SavedVariables ───────────────
+-- ADDON_LOADED: authoritative init on the real SavedVariables ------------------
 -- After this event ZoneTimerSettings is the real saved table (WoW replaced the
 -- placeholder above with data loaded from disk).  Re-applying defaults here
 -- fills in any keys added in newer addon versions for users with older save files.
@@ -89,7 +89,7 @@ _coreInitFrame:SetScript("OnEvent", function(self, event, addonName)
     ZoneTimerCharDB.announcedMilestones  = ZoneTimerCharDB.announcedMilestones or {}
 end)
 
--- ── Formatting ────────────────────────────────────────────────────────────────
+-- Formatting -------------------------------------------------------------------
 
 function ZoneTimerRedux:FormatTime(seconds)
     seconds = tonumber(seconds) or 0
@@ -127,7 +127,7 @@ function ZoneTimerRedux:ColorGold(text)
     return string.format("|cffFFD700%sg|r |cffffffff%ss|r |cffff7f00%sc|r", g, s, c)
 end
 
--- ── Data accessors ────────────────────────────────────────────────────────────
+-- Data accessors ---------------------------------------------------------------
 
 function ZoneTimerRedux:GetActiveTimes()
     return self.charView and ZoneTimerCharDB.times or ZoneTimerSettings.times
@@ -205,10 +205,10 @@ function ZoneTimerRedux:GenerateCSV()
     return table.concat(lines, "\n")
 end
 
--- forward declaration — defined in the Milestones section below
+-- forward declaration - defined in the Milestones section below
 local ActiveMilestones
 
--- ── Zone lifecycle ────────────────────────────────────────────────────────────
+-- Zone lifecycle ---------------------------------------------------------------
 
 function ZoneTimerRedux:SaveCurrentZone()
     if self.currentZone and self.enteredTime and not self.isPaused then
@@ -258,7 +258,7 @@ function ZoneTimerRedux:Resume()
     DebugPrint("Timer resumed.")
 end
 
--- ── Milestones ────────────────────────────────────────────────────────────────
+-- Milestones -------------------------------------------------------------------
 
 ActiveMilestones = function()
     return ZoneTimerSettings.mainPanelCharView
@@ -318,7 +318,7 @@ function ZoneTimerRedux:AdoptGlobalData()
     DebugPrint("Global data adopted.")
 end
 
--- ── Gold tracking ─────────────────────────────────────────────────────────────
+-- Gold tracking ----------------------------------------------------------------
 
 local goldFrame = CreateFrame("Frame")
 goldFrame:RegisterEvent("CHAT_MSG_MONEY")
