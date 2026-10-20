@@ -10,7 +10,6 @@ Updated to work on most versions of World of Warcraft.
 - Tracks gold earned in each zone
 - Per-character and account-wide data views
 - Zone tally with time and gold totals, sortable by time or gold
-- CSV export of tracked data
 - Milestone notifications for time and gold thresholds
 - Automatically pauses while AFK
 - Window themes

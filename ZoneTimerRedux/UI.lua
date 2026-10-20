@@ -324,31 +324,6 @@ tallyTimeText:SetPoint("BOTTOMLEFT", 20, 30)
 tallyGoldText = AlnUI:CreateLabel(tallyFrame, { text = "Character Gold: 0g 0s 0c", color = { 1, 0.82, 0 } })
 tallyGoldText:SetPoint("TOPLEFT", tallyTimeText, "BOTTOMLEFT", 0, -2)
 
--- Export window ---------------------------------------------------------------
-
-local exportFrame = AlnUI:CreateDialog({
-    name       = "ZoneTimerReduxExportFrame",
-    title      = "Zone Timer - CSV Export",
-    titleWidth = 520,
-    width      = 600,
-    height     = 400,
-    strata     = "DIALOG",
-    theme      = windowTheme(),
-})
-
-local _, exportEdit = AlnUI:CreateScrollFrame(exportFrame, {
-    x1 = 16, y1 = -62,
-    x2 = -30, y2 = 16,
-    childType     = "EditBox",
-    contentWidth  = 520,
-    contentHeight = 1,
-})
-exportEdit:SetMultiLine(true)
-exportEdit:SetFontObject(ChatFontNormal)
-exportEdit:SetAutoFocus(false)
-exportEdit:EnableMouse(true)
-exportEdit:SetScript("OnEscapePressed", function() exportFrame:Hide() end)
-
 -- Migration help window --------------------------------------------------------
 
 local migrationHelpFrame = AlnUI:CreateDialog({
@@ -386,7 +361,6 @@ local function ApplyTheme()
     local theme = windowTheme()
     mainFrame:SetTheme(theme)
     tallyFrame:SetTheme(theme)
-    exportFrame:SetTheme(theme)
     migrationHelpFrame:SetTheme(theme)
 end
 
@@ -443,12 +417,6 @@ end
 ZoneTimerRedux.SyncTallySort = function()
     tallyHeader:SetSort(ZTR.sortMode, ZTR.sortAscending)
     if tallyFrame:IsShown() then UpdateTally() end
-end
-
-ZoneTimerRedux.ShowExport = function()
-    exportEdit:SetText(ZTR:GenerateCSV())
-    exportEdit:HighlightText()
-    exportFrame:Show()
 end
 
 -- Event handler ----------------------------------------------------------------

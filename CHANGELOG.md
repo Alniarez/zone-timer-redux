@@ -3,6 +3,7 @@
 ## 1.2.6
 
 - Debug flag cleanup
+- Removed CSV export
 
 ## 1.2.5
 

@@ -188,23 +188,6 @@ function ZoneTimerRedux:GetSortedZones()
 end
 
 
-function ZoneTimerRedux:GenerateCSV()
-    local view  = self.charView and "character" or "account"
-    local lines = { "View,Zone,TimeSeconds,TimeFormatted,GoldCopper,GoldFormatted" }
-    for _, entry in ipairs(self:GetSortedZones()) do
-        table.insert(lines, string.format(
-            "%s,%q,%s,%q,%s,%q",
-            view,
-            entry.zone,
-            tostring(math.floor(entry.time)),
-            self:FormatTime(entry.time),
-            tostring(entry.gold),
-            self:FormatGold(entry.gold)
-        ))
-    end
-    return table.concat(lines, "\n")
-end
-
 -- forward declaration - defined in the Milestones section below
 local ActiveMilestones
 

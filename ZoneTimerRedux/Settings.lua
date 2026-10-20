@@ -184,17 +184,9 @@ loader:SetScript("OnEvent", function(self)
     end)
 
     -- Data ---------------------------------------------------------------------
-    -- Export and reset tools for recorded zone data.
+    -- Reset tools for recorded zone data.
 
     addonLayout:AddInitializer(CreateSettingsListSectionHeaderInitializer("Data"))
-
-    addonLayout:AddInitializer(CreateSettingsButtonInitializer(
-        "Export data as CSV", "Export",
-        function()
-            if ZoneTimerRedux.ShowExport then ZoneTimerRedux.ShowExport() end
-        end,
-        "Opens a window with all zone time and gold data formatted as CSV, ready to copy.",
-        false))
 
     addonLayout:AddInitializer(CreateSettingsButtonInitializer(
         "Reset current zone", "Reset",
