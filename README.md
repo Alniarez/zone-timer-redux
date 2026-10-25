@@ -23,3 +23,15 @@ Updated to work on most versions of World of Warcraft.
 - `/zt pause` - Pause the timer
 - `/zt resume` - Resume the timer
 - `/zt help` - Show available commands
+
+## Moving from ZoneTimer
+
+1. Close World of Warcraft.
+2. In `WTF/Account/<YourAccount>/SavedVariables/`, copy `ZoneTimer.lua` and rename the copy to `ZoneTimerRedux.lua`, replacing the existing file.
+3. Start the game. Don't run both addons at the same time.
+
+---
+
+Found a bug or have an idea? Open an issue on [GitHub](https://github.com/Alniarez/zone-timer-redux/issues) or leave a comment on CurseForge.
+
+More addons: [CurseForge](https://www.curseforge.com/members/alniarez/projects)
