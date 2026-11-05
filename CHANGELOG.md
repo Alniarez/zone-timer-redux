@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.2.7
+
+- TOC update
+
 ## 1.2.6
 
 - Debug flag cleanup
