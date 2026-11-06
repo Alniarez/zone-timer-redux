@@ -11,7 +11,6 @@ Updated to work on most versions of World of Warcraft.
 - Per-character and account-wide data views
 - Zone tally with time and gold totals, sortable by time or gold
 - Milestone notifications for time and gold thresholds
-- Automatically pauses while AFK
 - Window themes
 - Native settings panel (Interface -> AddOns -> Zone Timer Redux)
 

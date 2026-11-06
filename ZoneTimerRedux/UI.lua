@@ -403,8 +403,7 @@ end
 
 ZoneTimerRedux.ResetCurrentZone = function()
     if ZTR.currentZone then
-        ZoneTimerSettings.times[ZTR.currentZone] = 0
-        ZTR.enteredTime = time()
+        ZTR:ResetZone(ZTR.currentZone)
         timerText:SetText("---")
     end
 end
@@ -425,17 +424,9 @@ local eventFrame = CreateFrame("Frame")
 eventFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
 eventFrame:RegisterEvent("ZONE_CHANGED_NEW_AREA")
 eventFrame:RegisterEvent("PLAYER_LOGOUT")
-eventFrame:RegisterEvent("PLAYER_FLAGS_CHANGED")
 
+-- AFK time counts too: the timer only stops on /zt pause.
 eventFrame:SetScript("OnEvent", function(_, event)
-    if event == "PLAYER_FLAGS_CHANGED" then
-        if UnitIsAFK("player") then
-            ZTR:Pause()
-        else
-            ZTR:Resume()
-        end
-        return
-    end
 
     if event == "PLAYER_LOGOUT" then
         ZTR:SaveCurrentZone()

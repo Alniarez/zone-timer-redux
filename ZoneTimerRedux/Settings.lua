@@ -193,15 +193,14 @@ loader:SetScript("OnEvent", function(self)
         function()
             if ZoneTimerRedux.ResetCurrentZone then ZoneTimerRedux.ResetCurrentZone() end
         end,
-        "Clears the recorded time for the zone you are currently in.", true))
+        "Clears the recorded time for the zone you are currently in, for the account and this character.", true))
 
     addonLayout:AddInitializer(CreateSettingsButtonInitializer(
         "Reset all zones", "Reset All",
         function()
-            ZoneTimerSettings.times = {}
-            ZoneTimerSettings.announcedMilestones = {}
+            ZoneTimerRedux:ResetAll()
         end,
-        "Clears all recorded zone times and milestone data.", true))
+        "Clears all recorded zone times, gold and milestones, for the account and this character.", true))
 
     local adoptInit = CreateSettingsButtonInitializer(
         "Adopt global data as character data", "Adopt",

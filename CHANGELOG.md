@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.2.8
+
+- Fixed bugs found in Forever
+  - Fixed zone time getting lost, mostly while in a group
+  - No longer pauses while AFK: all time counts, use /zt pause to stop it
+- Reset buttons now clear character data too
+- Reset all zones also clears gold
+
 ## 1.2.7
 
 - TOC update

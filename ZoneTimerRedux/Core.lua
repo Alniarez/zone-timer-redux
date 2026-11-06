@@ -236,9 +236,49 @@ function ZoneTimerRedux:Pause()
 end
 
 function ZoneTimerRedux:Resume()
+    -- a running timer keeps its start, or the time since the last save is lost
+    if not self.isPaused then return end
     self.isPaused    = false
     self.enteredTime = time()
     DebugPrint("Timer resumed.")
+end
+
+-- Resets ----------------------------------------------------------------------
+-- Account and character data both, so the reset shows in either view. Other
+-- characters keep theirs: their data is only loaded on that character.
+
+-- the live session restarts too, so time before the reset is not added back
+local function RestartSession()
+    if ZoneTimerRedux.enteredTime then ZoneTimerRedux.enteredTime = time() end
+end
+
+-- Clears a zone's time and its time milestones. Gold and "discovered" stay.
+function ZoneTimerRedux:ResetZone(zone)
+    if not zone then return end
+    for _, db in ipairs({ ZoneTimerSettings, ZoneTimerCharDB }) do
+        db.times[zone] = nil
+        local ann = db.announcedMilestones[zone]
+        if ann then
+            for key in pairs(ann) do
+                if type(key) == "number" then ann[key] = nil end
+            end
+        end
+    end
+    if zone == self.currentZone then RestartSession() end
+    DebugPrint(string.format("Reset %q.", zone))
+end
+
+-- Clears every zone's time, gold and milestones. Gold goes too: with its
+-- milestones cleared, every gold milestone would announce again at once.
+function ZoneTimerRedux:ResetAll()
+    ZoneTimerSettings.times               = {}
+    ZoneTimerSettings.announcedMilestones = {}
+    ZoneGoldDB                            = {}
+    ZoneTimerCharDB.times                 = {}
+    ZoneTimerCharDB.gold                  = {}
+    ZoneTimerCharDB.announcedMilestones   = {}
+    RestartSession()
+    DebugPrint("Reset all zones.")
 end
 
 -- Milestones -------------------------------------------------------------------
