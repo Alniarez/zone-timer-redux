@@ -1,8 +1,14 @@
 package-as: ZoneTimerRedux
 
+move-folders:
+  ZoneTimerRedux/ZoneTimerRedux: ZoneTimerRedux
+
 ignore:
   - README.md
   - CHANGELOG.md
-  - LICENSE
-  - .gitignore
-  - .github
+  - WHATS_NEW.md
+  - pkgmeta.yaml
+
+manual-changelog:
+  filename: WHATS_NEW.md
+  markup-type: markdown

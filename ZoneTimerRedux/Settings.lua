@@ -16,6 +16,25 @@ if SettingsButtonElementMixin then
     end)
 end
 
+-- A settings button that shows up in the Settings search. Search words added
+-- by addon code (CreateSettingsButtonInitializer with addSearchTags) taint the
+-- search, and Blizzard then blocks the Discord row's IsUserOAuthed(). Backed
+-- by an unused setting, Blizzard adds the label as a search word itself.
+local unusedSettings = {}
+local function AddSearchableButton(category, variable, label, buttonText, onClick, tooltip)
+    local layout = SettingsPanel:GetLayout(category)
+    if not Settings.CreateSettingInitializer then
+        layout:AddInitializer(CreateSettingsButtonInitializer(label, buttonText, onClick, tooltip, false))
+        return
+    end
+    local setting = Settings.RegisterAddOnSetting(category, variable, variable, unusedSettings,
+        Settings.VarType.Boolean, label, false)
+    layout:AddInitializer(Settings.CreateSettingInitializer("SettingButtonControlTemplate", {
+        setting = setting, name = label, tooltip = tooltip,
+        buttonText = buttonText, buttonClick = onClick,
+    }))
+end
+
 -- Delay all registration until PLAYER_LOGIN.
 -- By that point SavedVariables are guaranteed loaded, the Settings UI is fully
 -- initialised, and addon compartment frames are available.
@@ -188,19 +207,17 @@ loader:SetScript("OnEvent", function(self)
 
     addonLayout:AddInitializer(CreateSettingsListSectionHeaderInitializer("Data"))
 
-    addonLayout:AddInitializer(CreateSettingsButtonInitializer(
-        "Reset current zone", "Reset",
+    AddSearchableButton(category, "ZTR_RESET_ZONE", "Reset current zone", "Reset",
         function()
             if ZoneTimerRedux.ResetCurrentZone then ZoneTimerRedux.ResetCurrentZone() end
         end,
-        "Clears the recorded time for the zone you are currently in, for the account and this character.", true))
+        "Clears the recorded time for the zone you are currently in, for the account and this character.")
 
-    addonLayout:AddInitializer(CreateSettingsButtonInitializer(
-        "Reset all zones", "Reset All",
+    AddSearchableButton(category, "ZTR_RESET_ALL", "Reset all zones", "Reset All",
         function()
             ZoneTimerRedux:ResetAll()
         end,
-        "Clears all recorded zone times, gold and milestones, for the account and this character.", true))
+        "Clears all recorded zone times, gold and milestones, for the account and this character.")
 
     local adoptInit = CreateSettingsButtonInitializer(
         "Adopt global data as character data", "Adopt",

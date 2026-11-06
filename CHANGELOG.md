@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.2.9
+
+- Tainted menu fix
+
 ## 1.2.8
 
 - Fixed bugs found in Forever

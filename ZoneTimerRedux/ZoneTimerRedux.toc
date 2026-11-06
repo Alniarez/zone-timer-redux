@@ -1,8 +1,9 @@
 ## Interface: 120105, 20505, 50504, 11508, 16001
 ## Title: ZoneTimer Redux
 ## Notes: Tracks time and gold per zone.
-## Version: 1.2.8
+## Version: 1.2.9
 ## Author: Alniarez
+## X-Curse-Project-ID: 1587387
 ## OptionalDeps: AlniDev
 ## IconTexture: Interface\Icons\spell_nature_timestop
 ## SavedVariables: ZoneTimerSettings, ZoneGoldDB
